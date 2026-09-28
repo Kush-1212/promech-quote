@@ -670,36 +670,103 @@ Email:</textarea>
     document.querySelectorAll('.meta-row.pdf-hide').forEach(r=>r.classList.remove('pdf-hide'));
     document.body.classList.remove('capturing-pdf');
   }
-
   async function buildPdfBlob(){
     if(typeof html2canvas!=='function') throw new Error('The PDF rendering library did not load. Check your connection and try again.');
     if(!window.jspdf || !window.jspdf.jsPDF) throw new Error('The PDF library did not load. Check your connection and try again.');
     if(document.fonts && document.fonts.ready) await document.fonts.ready;
     window.scrollTo(0,0);
-    const paperEl=document.getElementById('paper');
+    const paperEl = document.getElementById('paper') || document.querySelector('main');
+    if(!paperEl) throw new Error('Quotation paper element not found.');
     
-    const canvas=await html2canvas(paperEl, {scale:2, backgroundColor:'#F8F4EA', useCORS:true});
+    const canvas = await html2canvas(paperEl, {scale:2, backgroundColor:'#F8F4EA', useCORS:true});
     
     const { jsPDF } = window.jspdf;
-    const doc=new jsPDF({unit:'pt', format:'a4'});
-    const pageW=doc.internal.pageSize.getWidth();
-    const pageH=doc.internal.pageSize.getHeight();
-    const imgW=pageW;
-    const imgH=canvas.height*imgW/canvas.width;
-    const imgData=canvas.toDataURL('image/jpeg',0.95);
-    let heightLeft=imgH, position=0;
-    doc.addImage(imgData,'JPEG',0,position,imgW,imgH);
-    heightLeft-=pageH;
-    while(heightLeft>0){
-      position=heightLeft-imgH;
+    const doc = new jsPDF({unit:'pt', format:'a4'});
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const imgW = pageW;
+    const imgH = canvas.height * imgW / canvas.width;
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    let heightLeft = imgH, position = 0;
+    doc.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+    heightLeft -= pageH;
+    while(heightLeft > 0){
+      position = heightLeft - imgH;
       doc.addPage();
-      doc.addImage(imgData,'JPEG',0,position,imgW,imgH);
-      heightLeft-=pageH;
+      doc.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+      heightLeft -= pageH;
     }
-    return doc.output('blob');
+    
+    // Store in memory so the download button can save it instantly
+    window._lastPdfDoc = doc;
+    const blob = doc.output('blob');
+    window._lastPdfBlob = blob;
+    return blob;
   }
 
   async function downloadPdf(){
+    const btn = document.getElementById('pdfDownloadBtn') || document.querySelector('[id*="download" i]');
+    const oldText = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'Downloading…'; }
+
+    try {
+      // 1. Generate clean filename
+      let fname = 'quotation.pdf';
+      try {
+        const qEl = document.getElementById('quoteNo');
+        const qVal = qEl ? (qEl.value || qEl.innerText || '') : '';
+        const cleanQ = qVal.replace(/[^a-zA-Z0-9-_]/g, '');
+        let revStr = '';
+        if (typeof currentRevision !== 'undefined' && currentRevision > 1) {
+          revStr = '-r' + currentRevision;
+        }
+        fname = (cleanQ || 'quotation') + revStr + '.pdf';
+      } catch(e) {
+        fname = 'quotation.pdf';
+      }
+
+      // 2. Use the already generated PDF from preview (or generate fresh if needed)
+      let doc = window._lastPdfDoc;
+      if (!doc) {
+        await buildPdfBlob();
+        doc = window._lastPdfDoc;
+      }
+
+      // 3. Trigger native, reliable browser download
+      if (doc && typeof doc.save === 'function') {
+        doc.save(fname);
+      } else {
+        const blob = window._lastPdfBlob || await buildPdfBlob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          a.remove();
+          URL.revokeObjectURL(url);
+        }, 3000);
+      }
+
+      // 4. Close preview safely after download begins
+      setTimeout(() => {
+        if (typeof closePdfPreview === 'function') {
+          closePdfPreview();
+        }
+      }, 800);
+
+    } catch(err) {
+      alert('Could not download the PDF: ' + (err && err.message ? err.message : err));
+    } finally {
+      if(btn){
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+    }
+  }
+
+  {
     const btn=document.getElementById('pdfDownloadBtn');
     btn.disabled=true; const old=btn.textContent; btn.textContent='Preparing…';
     try{
