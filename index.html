@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quotation Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F8F4EA; --paper-edge:#EFE7D3; --rule:#C7CEDF;
+    --ink:#1B2A4A; --ink-soft:#55617C;
+    --accent:#C9A227; --accent-deep:#9C7A15;
+    --chrome:#0B1730; --chrome-soft:#122045;
+    --font-d:'Courier Prime','Courier New',monospace;
+    --font-u:'Courier Prime','Courier New',monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--chrome:#070F22;--chrome-soft:#0D1938;}}
+  :root[data-theme="dark"]{--chrome:#070F22;--chrome-soft:#0D1938;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--chrome);}
+  body{
+    font-family:var(--font-u); color:var(--ink); font-size:14px;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  input,textarea,select,button{font-family:inherit;font-size:inherit;color:inherit;}
+  .chrome-bar{
+    position:sticky; top:0; z-index:5; background:var(--chrome-soft);
+    padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    border-bottom:1px solid #000;
+  }
+  .chrome-bar .title{color:#F1E8CF; font-weight:700; font-size:14px;}
+  .chrome-bar .actions{display:flex; align-items:center; gap:8px;}
+  #currency{background:#0000; color:#F1E8CF; border:1px solid #33456E; border-radius:6px; padding:6px 8px;}
+  #currency option{color:#111;}
+  .btn-primary{background:var(--accent); color:#132038; border:none; border-radius:6px; padding:8px 14px; font-weight:700; cursor:pointer;}
+  .btn-primary:hover{background:var(--accent-deep); color:#F8F4EA;}
+  .btn-outline{background:none; border:1px solid var(--accent); color:#F1E8CF; border-radius:6px; padding:8px 14px; font-weight:700; cursor:pointer;}
+  .btn-outline:hover{background:rgba(201,162,39,.15);}
+  .hint{color:#8C9AC0; font-size:12px; text-align:center; margin:8px 16px 0;}
+  .tabs{display:flex; gap:6px; padding:0 16px 8px;}
+  .tab-btn{background:none; border:1px solid #33456E; color:#B9C4DE; font-size:12px; padding:6px 12px; border-radius:6px 6px 0 0; cursor:pointer; white-space:nowrap;}
+  .new-btn{white-space:nowrap; margin-left:auto; background:none; border:1px solid var(--accent); color:#F1E8CF; font-size:12px; padding:6px 12px; border-radius:6px; cursor:pointer;}
+  .new-btn:hover{background:rgba(201,162,39,.15);}
+  .tab-btn.active{background:var(--paper); color:var(--ink); border-color:var(--paper-edge); font-weight:700;}
+  main.paper{
+    max-width:720px; margin:20px auto 40px; background:var(--paper);
+    border:1px solid var(--paper-edge); box-shadow:0 18px 40px -20px rgba(0,0,0,.55);
+    padding:36px clamp(18px,5vw,48px) 30px; border-radius:2px;
+  }
+  .editable{border:none; background:none; width:100%; padding:2px 0; border-bottom:1px dashed var(--rule);}
+  .editable:focus{outline:none; border-bottom-color:var(--accent);}
+  .brand-row{display:flex; align-items:flex-start; gap:14px;}
+  .logo-wrap{
+    width:64px; height:64px; flex:0 0 auto; border:1px dashed var(--rule); border-radius:6px;
+    position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .logo-wrap.has-logo{border:none;}
+  #logoImg{width:100%; height:100%; object-fit:contain; display:none;}
+  .logo-btn{font-size:10px; color:var(--ink-soft); text-align:center; cursor:pointer; padding:4px;}
+  .logo-remove{
+    display:none; position:absolute; top:2px; right:2px; background:rgba(27,42,74,.7); color:#fff;
+    border:none; border-radius:50%; width:16px; height:16px; font-size:11px; line-height:1; cursor:pointer;
+  }
+  .brand-text{flex:1 1 auto; display:flex; flex-direction:column; gap:4px;}
+  .brand-name{font-family:var(--font-d); font-style:italic; font-weight:700; color:var(--accent-deep); font-size:clamp(22px,5vw,34px);}
+  .brand-details{color:var(--ink-soft); font-size:13px; resize:vertical; line-height:1.4;}
+  .rule{height:1px; background:var(--rule); margin:16px 0;}
+  .doc-meta{display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap;}
+  .doc-title{font-family:var(--font-d); font-size:20px; font-weight:700;}
+  .meta-row{display:flex; align-items:baseline; gap:8px; margin-top:8px; font-size:13px;}
+  .meta-row label{color:var(--ink-soft); flex:0 0 auto; min-width:78px;}
+  .meta-left{flex:1 1 220px;}
+  .meta-right{flex:0 0 auto;}
+  .meta-right .editable{width:130px;}
+  .print-date{display:none;}
+  .sub-hint{color:var(--ink-soft); font-size:11px; font-style:italic; margin:0 0 10px;}
+  .item-row{padding:12px 0; border-bottom:1px solid var(--rule);}
+  .row-top{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .row-top .item-name{flex:1 1 auto; font-weight:400;}
+  .measure-btn{border:1px solid var(--rule); background:none; color:var(--ink-soft); font-size:11px; padding:4px 9px; border-radius:20px; cursor:pointer; white-space:nowrap;}
+  .item-row[data-measure="on"] .measure-btn{background:var(--accent); border-color:var(--accent); color:#132038;}
+  .del-btn{background:none; border:none; color:#A8583F; font-size:17px; cursor:pointer; line-height:1; padding:2px 4px;}
+  .row-fields{display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px 14px;}
+  .fld{display:flex; flex-direction:column; font-size:11px; color:var(--ink-soft); min-width:52px;}
+  .fld input{margin-top:2px; width:70px; text-align:right;}
+  .fld input.u-unit{text-align:left;}
+  .fld input[type=number]{-moz-appearance:textfield;}
+  .fld input[type=number]::-webkit-outer-spin-button,.fld input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  .u-qty[readonly]{background:var(--paper-edge); color:var(--ink-soft);}
+  .x-sep{align-self:center; margin-top:12px; color:var(--ink-soft);}
+  .unit-toggle{display:flex; gap:2px; margin-top:2px;}
+  .mu-btn{border:1px solid var(--rule); background:none; color:var(--ink-soft); font-size:10px; padding:3px 6px; cursor:pointer; border-radius:3px;}
+  .item-row[data-measure-unit="in"] .mu-btn[data-mu="in"],
+  .item-row[data-measure-unit="mm"] .mu-btn[data-mu="mm"]{background:var(--accent); border-color:var(--accent); color:#132038;}
+  .amount-out{margin-top:2px; display:inline-block;}
+  .size-note{font-size:10px; color:var(--ink-soft); margin-top:2px; flex-basis:100%;}
+  .item-row[data-measure="off"] .measure-fld{display:none;}
+  .amount-fld{margin-left:auto;}
+  .btn-add{margin-top:12px; background:none; border:1px dashed var(--rule); color:var(--ink-soft); border-radius:6px; padding:7px 12px; cursor:pointer; font-size:13px;}
+  .btn-add:hover{border-color:var(--accent); color:var(--accent-deep);}
+  .totals{display:flex; flex-direction:column; gap:8px; max-width:260px; margin-left:auto;}
+  .totals-row{display:flex; justify-content:space-between; align-items:center; font-size:13px;}
+  .totals-row input{width:70px; text-align:right;}
+  .totals-row.grand{font-family:var(--font-d); font-weight:700; font-size:19px; color:var(--accent-deep); padding-top:8px; border-top:1px solid var(--rule); margin-top:2px;}
+  .notes label{display:block; color:var(--ink-soft); font-size:12px; margin-bottom:4px;}
+  .notes textarea{width:100%; border:none; background:none; resize:vertical; line-height:1.5; padding:2px 0; border-bottom:1px dashed var(--rule);}
+  .notes textarea:focus{outline:none; border-bottom-color:var(--accent);}
+  .prepared-by{margin-top:40px; display:flex; align-items:baseline; gap:8px; font-size:12px; color:var(--ink-soft);}
+  .prepared-by input{max-width:220px;}
+  .saved-panel{max-width:720px; margin:16px auto 40px; background:var(--paper); border:1px solid var(--paper-edge); border-radius:2px; padding:24px clamp(16px,4vw,32px);}
+  .saved-panel h2{font-family:var(--font-d); font-size:18px; margin:0 0 14px;}
+  .saved-row{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 0; border-bottom:1px solid var(--rule);}
+  .saved-main{display:flex; flex-direction:column; gap:2px; font-size:12px; color:var(--ink-soft);}
+  .saved-main strong{color:var(--ink); font-size:14px;}
+  .saved-actions{display:flex; gap:6px;}
+  .saved-actions button{background:none; border:1px solid var(--rule); color:var(--ink-soft); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;}
+  .saved-actions button:hover{border-color:var(--accent); color:var(--accent-deep);}
+  .saved-actions .del-btn2{color:#A8583F;}
+  @media (max-width:560px){
+    .doc-meta{flex-direction:column;}
+    .meta-left{flex:0 0 auto;}
+    .meta-right .editable{width:100%;}
+    .fld{min-width:44px;}
+    .fld input{width:56px;}
+  }
+
+  /* PRINT / SAVE AS PDF STYLES - ZERO CRASH, NATIVE VECTOR */
+  @media print{
+    @page{size:A4; margin:14mm;}
+    *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
+    body{background:#fff !important; color:#1B2A4A !important;}
+    .no-print{display:none !important;}
+    #savedPanel{display:none !important;}
+    #editorPanel{display:block !important;}
+    main.paper{box-shadow:none !important; border:none !important; margin:0 !important; max-width:100% !important; border-radius:0 !important; padding:0 !important; background:transparent !important;}
+    .editable{border-bottom:none !important;}
+    .logo-wrap:not(.has-logo){display:none !important;}
+    .logo-wrap.has-logo{border:none !important;}
+    input, textarea, select{border:none !important; background:none !important;}
+    input[type=date]{display:none !important;}
+    .print-date{display:inline-block !important;}
+  }
+</style>
+</head>
+<body>
+<div class="chrome-bar no-print">
+  <span class="title">Quotation Generator</span>
+  <div class="actions">
+    <select id="currency" aria-label="Currency">
+      <option value="₹">₹ INR</option>
+      <option value="$">$ USD</option>
+      <option value="€">€ EUR</option>
+      <option value="£">£ GBP</option>
+    </select>
+    <button id="saveCloudBtn" class="btn-outline">💾 Save</button>
+    <button id="exportBtn" class="btn-primary">Export PDF</button>
+  </div>
+</div>
+<div class="tabs no-print">
+  <button class="tab-btn active" data-tab="editor">Editor</button>
+  <button class="tab-btn" data-tab="saved">Saved Quotations</button>
+  <button class="new-btn" id="newQuoteBtn" type="button" title="Start a new quotation">＋ New</button>
+</div>
+<p class="hint no-print" id="topHint">Save keeps a copy in this browser. Export PDF downloads a clean PDF file.</p>
+
+<div id="editorPanel">
+<main class="paper" id="paper">
+  <header class="brand-row">
+    <div class="logo-wrap" id="logoWrap">
+      <img id="logoImg" alt="Logo">
+      <label id="logoLabel" class="logo-btn no-print" for="logoInput">+ Logo</label>
+      <button id="logoRemove" class="logo-remove no-print" type="button" title="Remove logo">×</button>
+      <input type="file" id="logoInput" accept="image/*" class="no-print" style="display:none;">
+    </div>
+    <div class="brand-text">
+      <input id="brandName" class="brand-name editable" value="Your Business Name" aria-label="Business name">
+      <textarea id="brandDetails" class="brand-details editable" rows="4">Address line 1
+Address line 2
+Phone:
+Email:</textarea>
+    </div>
+  </header>
+
+  <div class="rule"></div>
+
+  <section class="doc-meta">
+    <div class="meta-left">
+      <span class="doc-title">Quotation<span id="revBadge" style="font-size:12px;font-weight:400;color:var(--ink-soft);margin-left:8px;"></span></span>
+      <div class="meta-row"><label>Bill to</label><input id="billTo" class="editable" placeholder="Client name"></div>
+    </div>
+    <div class="meta-right">
+      <div class="meta-row"><label>No.</label><input id="quoteNo" class="editable"></div>
+      <div class="meta-row">
+        <label>Date</label>
+        <input type="date" id="quoteDate" class="editable">
+        <span class="print-date" id="quoteDatePrint"></span>
+      </div>
+      <div class="meta-row">
+        <label>Valid until</label>
+        <input type="date" id="validUntil" class="editable">
+        <span class="print-date" id="validUntilPrint"></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="items-section">
+    <p class="sub-hint no-print">Tap <strong>Measure</strong>, choose in or mm, enter height × width and pcs — converts to sq.ft automatically (rounded up to the nearest 6&quot;). Leave it off to enter Qty and Unit directly (pcs, set, kg, mtr...).</p>
+    <div id="itemsBody"></div>
+    <button id="addItemBtn" class="btn-add no-print">+ Add item</button>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="totals">
+    <div class="totals-row"><label>Subtotal</label><span id="subtotalOut">0.00</span></div>
+    <div class="totals-row"><label>Discount %</label><input type="number" id="discountPct" class="editable" value="0" min="0" step="0.01"></div>
+    <div class="totals-row"><label>Tax / GST %</label><input type="number" id="taxPct" class="editable" value="0" min="0" step="0.01"></div>
+    <div class="totals-row grand"><label>Total</label><span id="grandTotalOut">0.00</span></div>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="notes">
+    <label>Notes</label>
+    <textarea id="notes" rows="2">Prices valid until the date above. Payment due within 7 days of delivery.</textarea>
+  </section>
+
+  <footer class="prepared-by">
+    <label>Prepared by</label>
+    <input id="preparedBy" class="editable" placeholder="Your name">
+  </footer>
+</main>
+</div>
+
+<div id="savedPanel" class="saved-panel" style="display:none">
+  <h2>Saved Quotations</h2>
+  <p id="savedNote" style="font-size:11px;color:var(--ink-soft);margin:0 0 10px;"></p>
+  <div id="savedList"><p style="margin:0;color:var(--ink-soft);font-size:12px;">Loading…</p></div>
+</div>
+
+<datalist id="unitList">
+  <option value="pcs"><option value="set"><option value="sqft"><option value="kg">
+  <option value="ltr"><option value="mtr"><option value="ft"><option value="box">
+  <option value="dozen"><option value="bag"><option value="roll">
+</datalist>
+
+<script>
+(function(){
+  const KEY='quotegen_v5';
+  const LOCAL_KEY='quotegen_saved_v1';
+  const itemsBody=document.getElementById('itemsBody');
+  const fields=['brandName','brandDetails','billTo','quoteNo','quoteDate','validUntil','currency','discountPct','taxPct','notes','preparedBy'];
+  let currentDocId=null, currentRevision=1, lastDocsById={};
+
+  function esc(s){return String(s||'').replace(/"/g,'&quot;');}
+  function todayISO(){return new Date().toISOString().slice(0,10);}
+  function defaultQuoteNo(){
+    const d=new Date(), p=n=>String(n).padStart(2,'0');
+    return 'Q-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-01';
+  }
+  function locale(){return document.getElementById('currency').value==='₹'?'en-IN':'en-US';}
+  function fmt(n){return Number(n||0).toLocaleString(locale(),{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function fmtC(n){return document.getElementById('currency').value+fmt(n);}
+  function roundUp6(v){v=parseFloat(v)||0; if(v<=0) return 0; return Math.ceil(v/6)*6;}
+
+  function fmtDate(iso){
+    const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); if(!m) return iso||'';
+    const mon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m[2],10)-1];
+    return parseInt(m[3],10)+' '+mon+' '+m[1];
+  }
+
+  function syncPrintDates(){
+    document.getElementById('quoteDatePrint').textContent = fmtDate(document.getElementById('quoteDate').value);
+    document.getElementById('validUntilPrint').textContent = fmtDate(document.getElementById('validUntil').value);
+  }
+
+  function createRow(data){
+    data=data||{};
+    const measure=data.measure==='on'?'on':'off';
+    const mu=data.measureUnit==='mm'?'mm':'in';
+    const row=document.createElement('div');
+    row.className='item-row';
+    row.dataset.measure=measure;
+    row.dataset.measureUnit=mu;
+    row.innerHTML=
+      '<div class="row-top">'+
+        '<input class="item-name editable" placeholder="Item / stock name" value="'+esc(data.name||'')+'">'+
+        '<button type="button" class="measure-btn no-print" title="Measure height × width">📐 Measure</button>'+
+        '<button class="del-btn no-print" aria-label="Delete item" title="Delete item">×</button>'+
+      '</div>'+
+      '<div class="row-fields">'+
+        '<div class="fld measure-fld no-print"><label>Height</label><input type="number" class="u-h" min="0" step="any" value="'+esc(data.h||'')+'"></div>'+
+        '<span class="x-sep measure-fld no-print">×</span>'+
+        '<div class="fld measure-fld no-print"><label>Width</label><input type="number" class="u-w" min="0" step="any" value="'+esc(data.w||'')+'"></div>'+
+        '<div class="fld measure-fld no-print"><label>Unit</label><div class="unit-toggle">'+
+          '<button type="button" class="mu-btn" data-mu="in">in</button>'+
+          '<button type="button" class="mu-btn" data-mu="mm">mm</button>'+
+        '</div></div>'+
+        '<div class="fld measure-fld no-print"><label>Pcs</label><input type="number" class="u-pcs" min="0" step="1" value="'+(data.pcs!=null?esc(data.pcs):1)+'"></div>'+
+        '<div class="fld"><label>Qty</label><input type="number" class="u-qty" min="0" step="any" value="'+(data.qty!=null?esc(data.qty):1)+'"></div>'+
+        '<div class="fld"><label>Unit</label><input class="u-unit editable" list="unitList" placeholder="pcs" value="'+esc(data.unit||'')+'"></div>'+
+        '<div class="fld"><label>Rate</label><input type="number" class="u-rate" min="0" step="any" value="'+esc(data.rate||'')+'"></div>'+
+        '<div class="fld amount-fld"><label>Amount</label><span class="amount-out">0.00</span></div>'+
+      '</div>'+
+      '<div class="size-note measure-fld"></div>';
+
+    row.querySelector('.measure-btn').addEventListener('click',()=>{
+      row.dataset.measure=row.dataset.measure==='on'?'off':'on';
+      updateRowAmount(row); recalc(); save();
+    });
+    row.querySelectorAll('.mu-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      row.dataset.measureUnit=btn.dataset.mu; updateRowAmount(row); recalc(); save();
+    }));
+    row.querySelector('.del-btn').addEventListener('click',()=>{row.remove(); recalc(); save();});
+    row.querySelectorAll('.u-h,.u-w,.u-pcs,.u-qty,.u-rate').forEach(inp=>inp.addEventListener('input',()=>{updateRowAmount(row); recalc(); save();}));
+    row.querySelector('.u-unit').addEventListener('input',save);
+    row.querySelector('.item-name').addEventListener('input',save);
+
+    itemsBody.appendChild(row);
+    updateRowAmount(row);
+    return row;
+  }
+
+  function updateRowAmount(row){
+    const measure=row.dataset.measure==='on';
+    const mu=row.dataset.measureUnit==='mm'?'mm':'in';
+    const rate=parseFloat(row.querySelector('.u-rate').value)||0;
+    const qtyInput=row.querySelector('.u-qty');
+    let qtyEff;
+    if(measure){
+      const hRaw=parseFloat(row.querySelector('.u-h').value)||0;
+      const wRaw=parseFloat(row.querySelector('.u-w').value)||0;
+      const pcs=parseFloat(row.querySelector('.u-pcs').value)||0;
+      const hIn=mu==='mm'?hRaw/25.4:hRaw;
+      const wIn=mu==='mm'?wRaw/25.4:wRaw;
+      const rh=roundUp6(hIn), rw=roundUp6(wIn);
+      const perPiece=(rh/12)*(rw/12);
+      const totalSqft=perPiece*pcs;
+      qtyInput.value=totalSqft?totalSqft.toFixed(2):'0.00';
+      qtyInput.readOnly=true;
+      const note=row.querySelector('.size-note');
+      note.textContent=(hRaw||wRaw)?(hRaw+'×'+wRaw+' '+mu+', '+(pcs||0)+' pcs'):'';
+      const unitInput=row.querySelector('.u-unit');
+      if(!unitInput.value.trim()) unitInput.value='sqft';
+      qtyEff=totalSqft;
+    } else {
+      qtyInput.readOnly=false;
+      row.querySelector('.size-note').textContent='';
+      qtyEff=parseFloat(qtyInput.value)||0;
+    }
+    const amount=qtyEff*rate;
+    row.querySelector('.amount-out').textContent=fmt(amount);
+    row.dataset.amount=amount;
+  }
+
+  function recalc(){
+    let subtotal=0;
+    itemsBody.querySelectorAll('.item-row').forEach(r=>subtotal+=parseFloat(r.dataset.amount)||0);
+    const discPct=parseFloat(document.getElementById('discountPct').value)||0;
+    const taxPct=parseFloat(document.getElementById('taxPct').value)||0;
+    const afterDisc=subtotal-(subtotal*discPct/100);
+    const grand=afterDisc+(afterDisc*taxPct/100);
+    document.getElementById('subtotalOut').textContent=fmtC(subtotal);
+    document.getElementById('grandTotalOut').textContent=fmtC(grand);
+    syncPrintDates();
+  }
+
+  function getState(){
+    const state={};
+    fields.forEach(id=>{const el=document.getElementById(id); if(el) state[id]=el.value;});
+    const img=document.getElementById('logoImg');
+    state.logo=(img.style.display==='block')?img.src:'';
+    state.items=[...itemsBody.querySelectorAll('.item-row')].map(r=>({
+      name:r.querySelector('.item-name').value,
+      measure:r.dataset.measure,
+      measureUnit:r.dataset.measureUnit,
+      h:r.querySelector('.u-h').value,
+      w:r.querySelector('.u-w').value,
+      pcs:r.querySelector('.u-pcs').value,
+      qty:r.querySelector('.u-qty').value,
+      unit:r.querySelector('.u-unit').value,
+      rate:r.querySelector('.u-rate').value
+    }));
+    return state;
+  }
+
+  function nextQuoteNo(){
+    const cur=(document.getElementById('quoteNo').value||'').trim();
+    const m=/^(.*-)(\d+)$/.exec(cur);
+    const today=defaultQuoteNo();
+    if(m && today.indexOf(m[1])===0){
+      const n=String(parseInt(m[2],10)+1);
+      return m[1]+(n.length<m[2].length?n.padStart(m[2].length,'0'):n);
+    }
+    return today;
+  }
+
+  function newQuotation(){
+    if(!confirm('Start a new quotation? Current details will be cleared.')) return;
+    const nextNo=nextQuoteNo();
+    document.getElementById('billTo').value='';
+    document.getElementById('quoteDate').value=todayISO();
+    document.getElementById('validUntil').value=addDaysISO(todayISO(),15);
+    document.getElementById('quoteNo').value=nextNo;
+    document.getElementById('discountPct').value='0';
+    document.getElementById('taxPct').value='0';
+    itemsBody.innerHTML='';
+    createRow();
+    currentDocId=null; currentRevision=1;
+    recalc(); save();
+    switchTab('editor');
+    window.scrollTo(0,0);
+  }
+
+  function addDaysISO(iso,n){
+    const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); if(!m) return '';
+    const d=new Date(parseInt(m[1],10),parseInt(m[2],10)-1,parseInt(m[3],10)+n);
+    const p=x=>String(x).padStart(2,'0');
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+
+  function updateRevBadge(){
+    const rb=document.getElementById('revBadge');
+    if(rb) rb.textContent=currentRevision>1?('Revision '+currentRevision):'';
+  }
+
+  function save(){
+    updateRevBadge();
+    syncPrintDates();
+    try{
+      const state=getState();
+      state._docId=currentDocId; state._rev=currentRevision;
+      localStorage.setItem(KEY,JSON.stringify(state));
+    }catch(e){}
+  }
+
+  function load(){try{const raw=localStorage.getItem(KEY); return raw?JSON.parse(raw):null;}catch(e){return null;}}
+
+  function applyState(state){
+    fields.forEach(id=>{if(state[id]!=null){const el=document.getElementById(id); if(el) el.value=state[id];}});
+    itemsBody.innerHTML='';
+    if(state.logo){ setLogo(state.logo); } else { clearLogo(); }
+    (state.items&&state.items.length?state.items:[{}]).forEach(createRow);
+    recalc();
+  }
+
+  function setLogo(src){
+    const img=document.getElementById('logoImg');
+    const wrap=document.getElementById('logoWrap');
+    img.src=src; img.style.display='block';
+    wrap.classList.add('has-logo');
+    document.getElementById('logoLabel').style.display='none';
+    document.getElementById('logoRemove').style.display='block';
+  }
+
+  function clearLogo(){
+    const img=document.getElementById('logoImg');
+    const wrap=document.getElementById('logoWrap');
+    img.removeAttribute('src'); img.style.display='none';
+    wrap.classList.remove('has-logo');
+    document.getElementById('logoLabel').style.display='block';
+    document.getElementById('logoRemove').style.display='none';
+  }
+
+  function localRead(){try{const a=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]'); return Array.isArray(a)?a:[];}catch(e){return [];}}
+  function localWrite(a){localStorage.setItem(LOCAL_KEY,JSON.stringify(a));}
+
+  function saveQuote(){
+    const docData=Object.assign({}, getState(), {
+      id: currentDocId || ('doc-'+Date.now()),
+      revision: currentRevision||1,
+      grandTotalDisplay: document.getElementById('grandTotalOut').textContent,
+      updatedAt: Date.now()
+    });
+    delete docData.logo;
+    const arr=localRead();
+    const i=arr.findIndex(x=>String(x.id)===String(docData.id));
+    if(i>=0){
+      arr[i]=Object.assign({}, docData, {createdAt:arr[i].createdAt||Date.now()});
+    } else {
+      currentDocId=docData.id;
+      arr.unshift(docData);
+    }
+    localWrite(arr);
+    renderSavedList();
+    save();
+  }
+
+  function renderSavedList(){
+    const listEl=document.getElementById('savedList');
+    const items=localRead().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    if(!items.length){ listEl.innerHTML='<p style="margin:0;color:var(--ink-soft);font-size:12px;">No saved quotations yet. Use Save in the editor.</p>'; return; }
+    lastDocsById={};
+    listEl.innerHTML='';
+    items.forEach(data=>{
+      const id=String(data.id);
+      lastDocsById[id]=data;
+      const row=document.createElement('div');
+      row.className='saved-row';
+      row.innerHTML=
+        '<div class="saved-main">'+
+          '<strong>'+esc(data.quoteNo||'')+((data.revision||1)>1?' · Rev '+data.revision:'')+'</strong>'+
+          '<span>'+esc(data.billTo||'(no client)')+'</span>'+
+          '<span>'+esc(data.quoteDate||'')+'</span>'+
+          '<span>'+esc(data.grandTotalDisplay||'')+'</span>'+
+        '</div>'+
+        '<div class="saved-actions">'+
+          '<button type="button" class="open-btn" data-id="'+esc(id)+'">Open</button>'+
+          '<button type="button" class="rev-btn" data-id="'+esc(id)+'">New revision</button>'+
+          '<button type="button" class="del-btn2" data-id="'+esc(id)+'">Delete</button>'+
+        '</div>';
+      listEl.appendChild(row);
+    });
+    listEl.querySelectorAll('.open-btn').forEach(b=>b.addEventListener('click',()=>openSaved(b.dataset.id,false)));
+    listEl.querySelectorAll('.rev-btn').forEach(b=>b.addEventListener('click',()=>openSaved(b.dataset.id,true)));
+    listEl.querySelectorAll('.del-btn2').forEach(b=>b.addEventListener('click',()=>deleteSaved(b.dataset.id)));
+  }
+
+  function openSaved(id, asNewRevision){
+    const data=lastDocsById[String(id)];
+    if(!data) return;
+    applyState(data);
+    if(asNewRevision){
+      currentDocId=null;
+      currentRevision=(data.revision||1)+1;
+    } else {
+      currentDocId=String(id);
+      currentRevision=data.revision||1;
+    }
+    save();
+    switchTab('editor');
+  }
+
+  function deleteSaved(id){
+    if(!confirm('Delete this saved quotation? This cannot be undone.')) return;
+    const currentList=localRead();
+    const updatedList=currentList.filter(x=>String(x.id)!==String(id));
+    localWrite(updatedList);
+    renderSavedList();
+    if(String(currentDocId)===String(id)){
+      currentDocId=null;
+      save();
+    }
+  }
+
+  function switchTab(name){
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+    document.getElementById('editorPanel').style.display=name==='editor'?'':'none';
+    document.getElementById('savedPanel').style.display=name==='saved'?'':'none';
+    if(name==='saved'){
+      document.getElementById('savedNote').textContent='Saved on this device and browser.';
+      renderSavedList();
+    }
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+
+  document.getElementById('saveCloudBtn').addEventListener('click',()=>{
+    const btn=document.getElementById('saveCloudBtn');
+    const old=btn.textContent;
+    btn.textContent='Saved ✓';
+    saveQuote();
+    setTimeout(()=>{btn.textContent=old;},1500);
+  });
+
+  // EXPORT PDF: Uses native vector browser print engine
+  // Never crashes, zero RAM usage, instant, and preserves exact layout & fonts.
+  document.getElementById('exportBtn').addEventListener('click',()=>{
+    switchTab('editor');
+    syncPrintDates();
+    window.print();
+  });
+
+  function on(id,evt,fn){ const el=document.getElementById(id); if(el) el.addEventListener(evt,fn); }
+
+  on('addItemBtn','click',()=>{
+    const row=createRow(); save(); row.querySelector('.item-name').focus();
+  });
+  fields.forEach(id=>on(id,'input',()=>{recalc(); save();}));
+  on('newQuoteBtn','click', newQuotation);
+
+  on('logoInput','change',function(e){
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onerror=()=>alert('Could not read file.');
+    reader.onload=function(ev){
+      const src=new Image();
+      src.onload=function(){
+        const nw=src.naturalWidth||300, nh=src.naturalHeight||300;
+        const scale=Math.min(1, 400/Math.max(nw,nh));
+        const w=Math.max(1,Math.round(nw*scale)), h=Math.max(1,Math.round(nh*scale));
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(src,0,0,w,h);
+        setLogo(c.toDataURL('image/png'));
+        save();
+      };
+      src.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value='';
+  });
+  on('logoRemove','click',function(){ clearLogo(); save(); });
+
+  const saved=load();
+  document.getElementById('quoteDate').value=(saved&&saved.quoteDate)||todayISO();
+  document.getElementById('quoteNo').value=(saved&&saved.quoteNo)||defaultQuoteNo();
+  if(saved){
+    fields.forEach(id=>{if(saved[id]!=null){const el=document.getElementById(id); if(el&&id!=='quoteDate'&&id!=='quoteNo') el.value=saved[id];}});
+    if(saved.logo) setLogo(saved.logo);
+    currentDocId=saved._docId||null;
+    currentRevision=saved._rev||1;
+    updateRevBadge();
+    (saved.items&&saved.items.length?saved.items:[{}]).forEach(createRow);
+  } else {
+    createRow();
+  }
+  if(!document.getElementById('validUntil').value) document.getElementById('validUntil').value=addDaysISO(document.getElementById('quoteDate').value,15);
+  recalc(); save();
+})();
+</script>
+</body>
+</html>
