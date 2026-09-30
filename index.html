@@ -93,14 +93,19 @@
   .x-sep{align-self:center; margin-top:12px; color:var(--ink-soft);}
   .unit-toggle{display:flex; gap:2px; margin-top:2px;}
   .mu-btn{border:1px solid var(--rule); background:none; color:var(--ink-soft); font-size:10px; padding:3px 6px; cursor:pointer; border-radius:3px;}
-  .item-row[data-measure-unit="in"] .mu-btn[data-mu="in"],
-  .item-row[data-measure-unit="mm"] .mu-btn[data-mu="mm"]{background:var(--accent); border-color:var(--accent); color:#132038;}
+  .measure-row[data-mu="in"] .mu-btn[data-mu="in"],
+  .measure-row[data-mu="mm"] .mu-btn[data-mu="mm"]{background:var(--accent); border-color:var(--accent); color:#132038;}
   .amount-out{margin-top:2px; display:inline-block;}
-  .size-note{font-size:10px; color:var(--ink-soft); margin-top:2px; flex-basis:100%;}
-  .item-row[data-measure="off"] .measure-fld{display:none;}
+  .size-note{font-size:11px; color:var(--ink-soft); margin-top:4px; flex-basis:100%; white-space:pre-line; line-height:1.4;}
+  .item-row[data-measure="off"] .measure-block{display:none;}
+  .item-row[data-measure="off"] .size-note{display:none;}
   .amount-fld{margin-left:auto;}
   .btn-add{margin-top:12px; background:none; border:1px dashed var(--rule); color:var(--ink-soft); border-radius:6px; padding:7px 12px; cursor:pointer; font-size:13px;}
   .btn-add:hover{border-color:var(--accent); color:var(--accent-deep);}
+  .btn-add-size{background:none; border:1px dashed var(--rule); color:var(--ink-soft); border-radius:4px; padding:4px 9px; cursor:pointer; font-size:11px; margin-top:4px;}
+  .btn-add-size:hover{border-color:var(--accent); color:var(--accent-deep);}
+  .size-badge{font-size:11px; color:var(--ink-soft); background:var(--paper-edge); padding:2px 6px; border-radius:3px;}
+  .del-size-btn{background:none; border:none; color:#A8583F; cursor:pointer; font-size:15px; margin-top:14px; padding:0 4px;}
   .totals{display:flex; flex-direction:column; gap:8px; max-width:260px; margin-left:auto;}
   .totals-row{display:flex; justify-content:space-between; align-items:center; font-size:13px;}
   .totals-row input{width:70px; text-align:right;}
@@ -108,6 +113,7 @@
   .notes label{display:block; color:var(--ink-soft); font-size:12px; margin-bottom:4px;}
   .notes textarea{width:100%; border:none; background:none; resize:vertical; line-height:1.5; padding:2px 0; border-bottom:1px dashed var(--rule);}
   .notes textarea:focus{outline:none; border-bottom-color:var(--accent);}
+  .notes-print{display:none; white-space:pre-wrap; word-break:break-word; line-height:1.5; font-size:13px; color:var(--ink); padding:2px 0;}
   .prepared-by{margin-top:40px; display:flex; align-items:baseline; gap:8px; font-size:12px; color:var(--ink-soft);}
   .prepared-by input{max-width:220px;}
   .saved-panel{max-width:720px; margin:16px auto 40px; background:var(--paper); border:1px solid var(--paper-edge); border-radius:2px; padding:24px clamp(16px,4vw,32px);}
@@ -119,6 +125,15 @@
   .saved-actions button{background:none; border:1px solid var(--rule); color:var(--ink-soft); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;}
   .saved-actions button:hover{border-color:var(--accent); color:var(--accent-deep);}
   .saved-actions .del-btn2{color:#A8583F;}
+
+  /* Modal Styling for Cloud Settings */
+  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px;}
+  .modal-card{background:var(--paper); border:1px solid var(--paper-edge); border-radius:6px; max-width:460px; width:100%; padding:22px; box-shadow:0 18px 40px rgba(0,0,0,0.45); color:var(--ink);}
+  .modal-card h3{margin:0 0 10px; font-family:var(--font-d); font-size:17px;}
+  .modal-card p{font-size:12px; color:var(--ink-soft); line-height:1.4; margin:0 0 14px;}
+  .modal-card input{width:100%; padding:8px; border:1px solid var(--rule); border-radius:4px; margin-bottom:14px; background:#fff;}
+  .modal-btns{display:flex; justify-content:flex-end; gap:8px;}
+
   @media (max-width:560px){
     .doc-meta{flex-direction:column;}
     .meta-left{flex:0 0 auto;}
@@ -127,7 +142,7 @@
     .fld input{width:56px;}
   }
 
-  /* PRINT / SAVE AS PDF STYLES - ZERO CRASH, NATIVE VECTOR */
+  /* PRINT / SAVE AS PDF STYLES - ZERO CUTOFF, FULL MULTI-PAGE PRINT */
   @media print{
     @page{size:A4; margin:14mm;}
     *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
@@ -142,6 +157,14 @@
     input, textarea, select{border:none !important; background:none !important;}
     input[type=date]{display:none !important;}
     .print-date{display:inline-block !important;}
+    #notes{display:none !important;}
+    #notesPrint{display:block !important;}
+    .notes{page-break-inside:auto !important;}
+    .item-row{page-break-inside:avoid !important;}
+    .totals{page-break-inside:avoid !important;}
+    .doc-meta{page-break-inside:avoid !important;}
+    .brand-row{page-break-inside:avoid !important;}
+    .prepared-by{page-break-inside:avoid !important;}
   }
 </style>
 </head>
@@ -155,6 +178,7 @@
       <option value="€">€ EUR</option>
       <option value="£">£ GBP</option>
     </select>
+    <button id="cloudBtn" class="btn-outline" title="Sync between PC & Mobile">☁️ Cloud</button>
     <button id="saveCloudBtn" class="btn-outline">💾 Save</button>
     <button id="exportBtn" class="btn-primary">Export PDF</button>
   </div>
@@ -164,7 +188,7 @@
   <button class="tab-btn" data-tab="saved">Saved Quotations</button>
   <button class="new-btn" id="newQuoteBtn" type="button" title="Start a new quotation">＋ New</button>
 </div>
-<p class="hint no-print" id="topHint">Save keeps a copy in this browser. Export PDF downloads a clean PDF file.</p>
+<p class="hint no-print" id="topHint">Save keeps a copy in this browser and syncs to cloud. Export PDF creates a clean, full document to send.</p>
 
 <div id="editorPanel">
 <main class="paper" id="paper">
@@ -209,7 +233,7 @@ Email:</textarea>
   <div class="rule"></div>
 
   <section class="items-section">
-    <p class="sub-hint no-print">Tap <strong>Measure</strong>, choose in or mm, enter height × width and pcs — converts to sq.ft automatically (rounded up to the nearest 6&quot;). Leave it off to enter Qty and Unit directly (pcs, set, kg, mtr...).</p>
+    <p class="sub-hint no-print">Tap <strong>Measure</strong> to add multiple sizes (height × width × pcs) for same material — auto converts to sq.ft (rounded up to nearest 6&quot;). Leave off to enter Qty and Unit directly.</p>
     <div id="itemsBody"></div>
     <button id="addItemBtn" class="btn-add no-print">+ Add item</button>
   </section>
@@ -226,8 +250,11 @@ Email:</textarea>
   <div class="rule"></div>
 
   <section class="notes">
-    <label>Notes</label>
-    <textarea id="notes" rows="2">Prices valid until the date above. Payment due within 7 days of delivery.</textarea>
+    <label>Notes (Terms & Conditions)</label>
+    <textarea id="notes" rows="4">1. Prices valid until the date above.
+2. Payment: 50% advance along with purchase order.
+3. Delivery within 7 to 10 working days from final approved measurements.</textarea>
+    <div id="notesPrint" class="notes-print"></div>
   </section>
 
   <footer class="prepared-by">
@@ -238,9 +265,31 @@ Email:</textarea>
 </div>
 
 <div id="savedPanel" class="saved-panel" style="display:none">
-  <h2>Saved Quotations</h2>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+    <h2 style="margin:0;">Saved Quotations</h2>
+    <div style="display:flex; gap:6px;">
+      <button id="pullCloudBtn" class="btn-outline" style="font-size:11px; padding:4px 8px; color:var(--ink-soft); border-color:var(--rule);">🔄 Cloud Sync</button>
+      <button id="exportBackupBtn" class="btn-outline" style="font-size:11px; padding:4px 8px; color:var(--ink-soft); border-color:var(--rule);">📥 Backup File</button>
+      <button id="importBackupBtn" class="btn-outline" style="font-size:11px; padding:4px 8px; color:var(--ink-soft); border-color:var(--rule);">📤 Restore File</button>
+      <input type="file" id="importFileInput" accept=".json" style="display:none;">
+    </div>
+  </div>
   <p id="savedNote" style="font-size:11px;color:var(--ink-soft);margin:0 0 10px;"></p>
   <div id="savedList"><p style="margin:0;color:var(--ink-soft);font-size:12px;">Loading…</p></div>
+</div>
+
+<!-- Cloud Sync Setup Modal -->
+<div id="cloudModal" class="modal-overlay" style="display:none;">
+  <div class="modal-card">
+    <h3>☁️ Cloud Sync (PC & Mobile)</h3>
+    <p>Enter a private <strong>Sync Code</strong> (e.g. <code>promech-quote</code> or your mobile number). Use the exact same code on your phone and PC to share all saved quotations seamlessly.</p>
+    <label style="font-size:11px; color:var(--ink-soft); font-weight:700;">YOUR SYNC CODE</label>
+    <input type="text" id="syncCodeInput" placeholder="Enter sync code (e.g. promech-2026)">
+    <div class="modal-btns">
+      <button type="button" id="closeCloudModal" class="btn-outline" style="color:var(--ink-soft); border-color:var(--rule);">Cancel</button>
+      <button type="button" id="saveCloudCodeBtn" class="btn-primary">Save & Connect</button>
+    </div>
+  </div>
 </div>
 
 <datalist id="unitList">
@@ -253,6 +302,8 @@ Email:</textarea>
 (function(){
   const KEY='quotegen_v5';
   const LOCAL_KEY='quotegen_saved_v1';
+  const CLOUD_SYNC_KEY='quotegen_sync_code';
+  const CLOUD_BLOB_KEY='quotegen_blob_id';
   const itemsBody=document.getElementById('itemsBody');
   const fields=['brandName','brandDetails','billTo','quoteNo','quoteDate','validUntil','currency','discountPct','taxPct','notes','preparedBy'];
   let currentDocId=null, currentRevision=1, lastDocsById={};
@@ -277,31 +328,36 @@ Email:</textarea>
   function syncPrintDates(){
     document.getElementById('quoteDatePrint').textContent = fmtDate(document.getElementById('quoteDate').value);
     document.getElementById('validUntilPrint').textContent = fmtDate(document.getElementById('validUntil').value);
+    const notesVal = document.getElementById('notes').value;
+    document.getElementById('notesPrint').textContent = notesVal;
+    autoGrowNotes();
+  }
+
+  function autoGrowNotes(){
+    const el=document.getElementById('notes');
+    if(!el) return;
+    el.style.height='auto';
+    el.style.height=Math.max(el.scrollHeight, 60)+'px';
   }
 
   function createRow(data){
     data=data||{};
     const measure=data.measure==='on'?'on':'off';
-    const mu=data.measureUnit==='mm'?'mm':'in';
     const row=document.createElement('div');
     row.className='item-row';
     row.dataset.measure=measure;
-    row.dataset.measureUnit=mu;
+
     row.innerHTML=
       '<div class="row-top">'+
-        '<input class="item-name editable" placeholder="Item / stock name" value="'+esc(data.name||'')+'">'+
+        '<input class="item-name editable" placeholder="Item / stock name (e.g. 12mm Clear Glass, Profile Shutter)" value="'+esc(data.name||'')+'">'+
         '<button type="button" class="measure-btn no-print" title="Measure height × width">📐 Measure</button>'+
         '<button class="del-btn no-print" aria-label="Delete item" title="Delete item">×</button>'+
       '</div>'+
       '<div class="row-fields">'+
-        '<div class="fld measure-fld no-print"><label>Height</label><input type="number" class="u-h" min="0" step="any" value="'+esc(data.h||'')+'"></div>'+
-        '<span class="x-sep measure-fld no-print">×</span>'+
-        '<div class="fld measure-fld no-print"><label>Width</label><input type="number" class="u-w" min="0" step="any" value="'+esc(data.w||'')+'"></div>'+
-        '<div class="fld measure-fld no-print"><label>Unit</label><div class="unit-toggle">'+
-          '<button type="button" class="mu-btn" data-mu="in">in</button>'+
-          '<button type="button" class="mu-btn" data-mu="mm">mm</button>'+
-        '</div></div>'+
-        '<div class="fld measure-fld no-print"><label>Pcs</label><input type="number" class="u-pcs" min="0" step="1" value="'+(data.pcs!=null?esc(data.pcs):1)+'"></div>'+
+        '<div class="measure-block measure-fld no-print" style="width:100%;">'+
+          '<div class="measure-list"></div>'+
+          '<button type="button" class="btn-add-size no-print">+ Add size</button>'+
+        '</div>'+
         '<div class="fld"><label>Qty</label><input type="number" class="u-qty" min="0" step="any" value="'+(data.qty!=null?esc(data.qty):1)+'"></div>'+
         '<div class="fld"><label>Unit</label><input class="u-unit editable" list="unitList" placeholder="pcs" value="'+esc(data.unit||'')+'"></div>'+
         '<div class="fld"><label>Rate</label><input type="number" class="u-rate" min="0" step="any" value="'+esc(data.rate||'')+'"></div>'+
@@ -309,15 +365,23 @@ Email:</textarea>
       '</div>'+
       '<div class="size-note measure-fld"></div>';
 
+    const measureList = row.querySelector('.measure-list');
+    const measuresData = Array.isArray(data.measures) && data.measures.length ? data.measures :
+      [{ h: data.h||'', w: data.w||'', pcs: data.pcs!=null?data.pcs:1, mu: data.measureUnit||'in' }];
+
+    measuresData.forEach(m => addMeasureRow(measureList, row, m));
+
+    row.querySelector('.btn-add-size').addEventListener('click', () => {
+      addMeasureRow(measureList, row, { h:'', w:'', pcs:1, mu:'in' });
+      updateRowAmount(row); recalc(); save();
+    });
+
     row.querySelector('.measure-btn').addEventListener('click',()=>{
       row.dataset.measure=row.dataset.measure==='on'?'off':'on';
       updateRowAmount(row); recalc(); save();
     });
-    row.querySelectorAll('.mu-btn').forEach(btn=>btn.addEventListener('click',()=>{
-      row.dataset.measureUnit=btn.dataset.mu; updateRowAmount(row); recalc(); save();
-    }));
     row.querySelector('.del-btn').addEventListener('click',()=>{row.remove(); recalc(); save();});
-    row.querySelectorAll('.u-h,.u-w,.u-pcs,.u-qty,.u-rate').forEach(inp=>inp.addEventListener('input',()=>{updateRowAmount(row); recalc(); save();}));
+    row.querySelectorAll('.u-qty,.u-rate').forEach(inp=>inp.addEventListener('input',()=>{updateRowAmount(row); recalc(); save();}));
     row.querySelector('.u-unit').addEventListener('input',save);
     row.querySelector('.item-name').addEventListener('input',save);
 
@@ -326,25 +390,91 @@ Email:</textarea>
     return row;
   }
 
+  function addMeasureRow(container, parentRow, mData){
+    mData=mData||{};
+    const mu=mData.mu==='mm'?'mm':'in';
+    const mRow=document.createElement('div');
+    mRow.className='measure-row';
+    mRow.dataset.mu=mu;
+    mRow.style.cssText='display:flex; align-items:flex-end; gap:8px; margin-bottom:8px; flex-wrap:wrap;';
+
+    mRow.innerHTML=
+      '<div class="fld"><label>Height</label><input type="number" class="u-h" min="0" step="any" value="'+esc(mData.h||'')+'"></div>'+
+      '<span class="x-sep">×</span>'+
+      '<div class="fld"><label>Width</label><input type="number" class="u-w" min="0" step="any" value="'+esc(mData.w||'')+'"></div>'+
+      '<div class="fld"><label>Unit</label><div class="unit-toggle">'+
+        '<button type="button" class="mu-btn" data-mu="in">in</button>'+
+        '<button type="button" class="mu-btn" data-mu="mm">mm</button>'+
+      '</div></div>'+
+      '<div class="fld"><label>Pcs</label><input type="number" class="u-pcs" min="0" step="1" value="'+(mData.pcs!=null?esc(mData.pcs):1)+'"></div>'+
+      '<div class="fld" style="align-self:center; margin-top:14px;"><span class="size-badge">0.00 sqft</span></div>'+
+      '<button type="button" class="del-size-btn no-print" title="Delete size">×</button>';
+
+    mRow.querySelectorAll('.mu-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      mRow.dataset.mu=btn.dataset.mu;
+      updateRowAmount(parentRow); recalc(); save();
+    }));
+
+    mRow.querySelectorAll('.u-h,.u-w,.u-pcs').forEach(inp=>inp.addEventListener('input',()=>{
+      updateRowAmount(parentRow); recalc(); save();
+    }));
+
+    mRow.querySelector('.del-size-btn').addEventListener('click', ()=>{
+      if(container.querySelectorAll('.measure-row').length > 1){
+        mRow.remove();
+      } else {
+        mRow.querySelector('.u-h').value='';
+        mRow.querySelector('.u-w').value='';
+        mRow.querySelector('.u-pcs').value='1';
+      }
+      updateRowAmount(parentRow); recalc(); save();
+    });
+
+    container.appendChild(mRow);
+  }
+
   function updateRowAmount(row){
     const measure=row.dataset.measure==='on';
-    const mu=row.dataset.measureUnit==='mm'?'mm':'in';
     const rate=parseFloat(row.querySelector('.u-rate').value)||0;
     const qtyInput=row.querySelector('.u-qty');
-    let qtyEff;
+    let qtyEff=0;
+
     if(measure){
-      const hRaw=parseFloat(row.querySelector('.u-h').value)||0;
-      const wRaw=parseFloat(row.querySelector('.u-w').value)||0;
-      const pcs=parseFloat(row.querySelector('.u-pcs').value)||0;
-      const hIn=mu==='mm'?hRaw/25.4:hRaw;
-      const wIn=mu==='mm'?wRaw/25.4:wRaw;
-      const rh=roundUp6(hIn), rw=roundUp6(wIn);
-      const perPiece=(rh/12)*(rw/12);
-      const totalSqft=perPiece*pcs;
+      let totalSqft=0;
+      const lines=[];
+      const mRows=row.querySelectorAll('.measure-row');
+      
+      mRows.forEach((mEl, idx) => {
+        const hRaw=parseFloat(mEl.querySelector('.u-h').value)||0;
+        const wRaw=parseFloat(mEl.querySelector('.u-w').value)||0;
+        const pcs=parseFloat(mEl.querySelector('.u-pcs').value)||0;
+        const mu=mEl.dataset.mu||'in';
+        const hIn=mu==='mm'?hRaw/25.4:hRaw;
+        const wIn=mu==='mm'?wRaw/25.4:wRaw;
+        const rh=roundUp6(hIn), rw=roundUp6(wIn);
+        const perPiece=(rh/12)*(rw/12);
+        const entrySqft=perPiece*pcs;
+        totalSqft+=entrySqft;
+
+        const badge=mEl.querySelector('.size-badge');
+        if(badge) badge.textContent=entrySqft>0?(entrySqft.toFixed(2)+' sqft'):'0.00 sqft';
+
+        if(hRaw || wRaw){
+          const numPrefix=mRows.length>1?('#'+(idx+1)+': '):'';
+          lines.push(numPrefix+hRaw+' × '+wRaw+' '+mu+(pcs>1?(' ('+pcs+' pcs)'):'')+' = '+entrySqft.toFixed(2)+' sqft');
+        }
+      });
+
       qtyInput.value=totalSqft?totalSqft.toFixed(2):'0.00';
       qtyInput.readOnly=true;
+      
       const note=row.querySelector('.size-note');
-      note.textContent=(hRaw||wRaw)?(hRaw+'×'+wRaw+' '+mu+', '+(pcs||0)+' pcs'):'';
+      if(lines.length){
+        note.textContent = (mRows.length>1 ? 'Sizes:\n• ' : '') + lines.join('\n• ');
+      } else {
+        note.textContent = '';
+      }
+
       const unitInput=row.querySelector('.u-unit');
       if(!unitInput.value.trim()) unitInput.value='sqft';
       qtyEff=totalSqft;
@@ -353,6 +483,7 @@ Email:</textarea>
       row.querySelector('.size-note').textContent='';
       qtyEff=parseFloat(qtyInput.value)||0;
     }
+
     const amount=qtyEff*rate;
     row.querySelector('.amount-out').textContent=fmt(amount);
     row.dataset.amount=amount;
@@ -375,17 +506,26 @@ Email:</textarea>
     fields.forEach(id=>{const el=document.getElementById(id); if(el) state[id]=el.value;});
     const img=document.getElementById('logoImg');
     state.logo=(img.style.display==='block')?img.src:'';
-    state.items=[...itemsBody.querySelectorAll('.item-row')].map(r=>({
-      name:r.querySelector('.item-name').value,
-      measure:r.dataset.measure,
-      measureUnit:r.dataset.measureUnit,
-      h:r.querySelector('.u-h').value,
-      w:r.querySelector('.u-w').value,
-      pcs:r.querySelector('.u-pcs').value,
-      qty:r.querySelector('.u-qty').value,
-      unit:r.querySelector('.u-unit').value,
-      rate:r.querySelector('.u-rate').value
-    }));
+    state.items=[...itemsBody.querySelectorAll('.item-row')].map(r=>{
+      const mRows=[...r.querySelectorAll('.measure-row')].map(m=>({
+        h:m.querySelector('.u-h').value,
+        w:m.querySelector('.u-w').value,
+        pcs:m.querySelector('.u-pcs').value,
+        mu:m.dataset.mu||'in'
+      }));
+      const first=mRows[0]||{};
+      return {
+        name:r.querySelector('.item-name').value,
+        measure:r.dataset.measure,
+        measures:mRows,
+        h:first.h||'',
+        w:first.w||'',
+        pcs:first.pcs!=null?first.pcs:1,
+        qty:r.querySelector('.u-qty').value,
+        unit:r.querySelector('.u-unit').value,
+        rate:r.querySelector('.u-rate').value
+      };
+    });
     return state;
   }
 
@@ -470,6 +610,60 @@ Email:</textarea>
   function localRead(){try{const a=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]'); return Array.isArray(a)?a:[];}catch(e){return [];}}
   function localWrite(a){localStorage.setItem(LOCAL_KEY,JSON.stringify(a));}
 
+  // --- CLOUD SYNC ENGINE (PC + MOBILE) ---
+  async function syncPushToCloud(list){
+    const syncCode = (localStorage.getItem(CLOUD_SYNC_KEY)||'').trim();
+    if(!syncCode) return;
+    try{
+      let blobId = localStorage.getItem(CLOUD_BLOB_KEY);
+      if(!blobId){
+        const res = await fetch('https://jsonblob.com/api/jsonBlob', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          body: JSON.stringify({ code: syncCode, list: list, updatedAt: Date.now() })
+        });
+        const loc = res.headers.get('Location')||'';
+        const parts = loc.split('/');
+        blobId = parts[parts.length-1];
+        if(blobId) localStorage.setItem(CLOUD_BLOB_KEY, blobId);
+      } else {
+        await fetch('https://jsonblob.com/api/jsonBlob/' + blobId, {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          body: JSON.stringify({ code: syncCode, list: list, updatedAt: Date.now() })
+        });
+      }
+    }catch(err){ console.warn('Cloud auto-sync background info:', err); }
+  }
+
+  async function syncPullFromCloud(){
+    const syncCode = (localStorage.getItem(CLOUD_SYNC_KEY)||'').trim();
+    const blobId = (localStorage.getItem(CLOUD_BLOB_KEY)||'').trim();
+    if(!blobId){ alert('Please enter and connect your Sync Code first via ☁️ Cloud button.'); return; }
+    try{
+      const res = await fetch('https://jsonblob.com/api/jsonBlob/' + blobId, { headers: {'Accept': 'application/json'} });
+      if(!res.ok) throw new Error('Cloud storage record not found.');
+      const data = await res.json();
+      if(data && Array.isArray(data.list)){
+        const local = localRead();
+        const mergedMap = {};
+        local.forEach(item => mergedMap[String(item.id)] = item);
+        data.list.forEach(remoteItem => {
+          const id = String(remoteItem.id);
+          if(!mergedMap[id] || (remoteItem.updatedAt||0) > (mergedMap[id].updatedAt||0)){
+            mergedMap[id] = remoteItem;
+          }
+        });
+        const finalArr = Object.values(mergedMap).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+        localWrite(finalArr);
+        renderSavedList();
+        alert('Cloud sync complete! ' + finalArr.length + ' quotations loaded.');
+      }
+    }catch(e){
+      alert('Cloud Sync note: ' + (e&&e.message?e.message:e));
+    }
+  }
+
   function saveQuote(){
     const docData=Object.assign({}, getState(), {
       id: currentDocId || ('doc-'+Date.now()),
@@ -489,6 +683,7 @@ Email:</textarea>
     localWrite(arr);
     renderSavedList();
     save();
+    syncPushToCloud(arr);
   }
 
   function renderSavedList(){
@@ -542,6 +737,7 @@ Email:</textarea>
     const updatedList=currentList.filter(x=>String(x.id)!==String(id));
     localWrite(updatedList);
     renderSavedList();
+    syncPushToCloud(updatedList);
     if(String(currentDocId)===String(id)){
       currentDocId=null;
       save();
@@ -553,7 +749,10 @@ Email:</textarea>
     document.getElementById('editorPanel').style.display=name==='editor'?'':'none';
     document.getElementById('savedPanel').style.display=name==='saved'?'':'none';
     if(name==='saved'){
-      document.getElementById('savedNote').textContent='Saved on this device and browser.';
+      const syncCode = localStorage.getItem(CLOUD_SYNC_KEY);
+      document.getElementById('savedNote').textContent=syncCode
+        ? ('☁️ Cloud sync active with code: ' + syncCode)
+        : 'Saved locally. Click "☁️ Cloud" in top bar to sync across PC & Mobile.';
       renderSavedList();
     }
   }
@@ -568,7 +767,65 @@ Email:</textarea>
     setTimeout(()=>{btn.textContent=old;},1500);
   });
 
-  // EXPORT PDF: Uses native vector browser print engine
+  // Cloud Modal Listeners
+  document.getElementById('cloudBtn').addEventListener('click', ()=>{
+    document.getElementById('syncCodeInput').value = localStorage.getItem(CLOUD_SYNC_KEY)||'';
+    document.getElementById('cloudModal').style.display='flex';
+  });
+  document.getElementById('closeCloudModal').addEventListener('click', ()=>{
+    document.getElementById('cloudModal').style.display='none';
+  });
+  document.getElementById('saveCloudCodeBtn').addEventListener('click', async ()=>{
+    const val = document.getElementById('syncCodeInput').value.trim();
+    if(!val){
+      localStorage.removeItem(CLOUD_SYNC_KEY);
+      localStorage.removeItem(CLOUD_BLOB_KEY);
+      alert('Cloud Sync disabled. Saving locally only.');
+    } else {
+      localStorage.setItem(CLOUD_SYNC_KEY, val);
+      await syncPushToCloud(localRead());
+      alert('Connected to cloud with code: ' + val + '\nUse this exact same code on your other phone/PC!');
+    }
+    document.getElementById('cloudModal').style.display='none';
+  });
+
+  // 1-Click File Backup & Restore
+  document.getElementById('exportBackupBtn').addEventListener('click', ()=>{
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(localRead(), null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute('href', dataStr);
+    dlAnchor.setAttribute('download', 'Promech-Quotes-Backup.json');
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+  });
+  document.getElementById('importBackupBtn').addEventListener('click', ()=>{
+    document.getElementById('importFileInput').click();
+  });
+  document.getElementById('importFileInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt)=>{
+      try{
+        const imported = JSON.parse(evt.target.result);
+        if(Array.isArray(imported)){
+          localWrite(imported);
+          renderSavedList();
+          syncPushToCloud(imported);
+          alert('Successfully restored ' + imported.length + ' quotations!');
+        } else {
+          alert('Invalid backup file format.');
+        }
+      }catch(err){ alert('Error reading file: '+err.message); }
+    };
+    reader.readAsText(file);
+    e.target.value='';
+  });
+
+  document.getElementById('pullCloudBtn').addEventListener('click', syncPullFromCloud);
+
+  // EXPORT PDF: Native vector browser print engine
   // Never crashes, zero RAM usage, instant, and preserves exact layout & fonts.
   document.getElementById('exportBtn').addEventListener('click',()=>{
     switchTab('editor');
@@ -583,6 +840,7 @@ Email:</textarea>
   });
   fields.forEach(id=>on(id,'input',()=>{recalc(); save();}));
   on('newQuoteBtn','click', newQuotation);
+  on('notes','input', syncPrintDates);
 
   on('logoInput','change',function(e){
     const file=e.target.files[0]; if(!file) return;
