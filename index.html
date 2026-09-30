@@ -111,8 +111,9 @@
   .totals-row input{width:70px; text-align:right;}
   .totals-row.grand{font-family:var(--font-d); font-weight:700; font-size:19px; color:var(--accent-deep); padding-top:8px; border-top:1px solid var(--rule); margin-top:2px;}
   .notes label{display:block; color:var(--ink-soft); font-size:12px; margin-bottom:4px;}
-  .notes textarea{width:100%; border:none; background:none; resize:vertical; line-height:1.5; padding:2px 0; border-bottom:1px dashed var(--rule);}
+  .notes textarea{width:100%; border:none; background:none; resize:vertical; line-height:1.5; padding:2px 0; border-bottom:1px dashed var(--rule); min-height:60px;}
   .notes textarea:focus{outline:none; border-bottom-color:var(--accent);}
+  .notes-print{display:none; white-space:pre-wrap; word-break:break-word; line-height:1.5; font-size:13px; color:var(--ink); padding:2px 0;}
   .prepared-by{margin-top:40px; display:flex; align-items:baseline; gap:8px; font-size:12px; color:var(--ink-soft);}
   .prepared-by input{max-width:220px;}
   .saved-panel{max-width:720px; margin:16px auto 40px; background:var(--paper); border:1px solid var(--paper-edge); border-radius:2px; padding:24px clamp(16px,4vw,32px);}
@@ -132,7 +133,7 @@
     .fld input{width:56px;}
   }
 
-  /* PRINT / SAVE AS PDF STYLES - ZERO CRASH, NATIVE VECTOR */
+  /* PRINT / SAVE AS PDF STYLES - ZERO CRASH, FULL TERMS, NATIVE VECTOR */
   @media print{
     @page{size:A4; margin:14mm;}
     *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
@@ -147,6 +148,16 @@
     input, textarea, select{border:none !important; background:none !important;}
     input[type=date]{display:none !important;}
     .print-date{display:inline-block !important;}
+    
+    /* Notes print container prevents truncating long terms & conditions */
+    #notes{display:none !important;}
+    #notesPrint{display:block !important;}
+    .notes{page-break-inside:auto !important;}
+    .item-row{page-break-inside:avoid !important;}
+    .totals{page-break-inside:avoid !important;}
+    .doc-meta{page-break-inside:avoid !important;}
+    .brand-row{page-break-inside:avoid !important;}
+    .prepared-by{page-break-inside:avoid !important;}
   }
 </style>
 </head>
@@ -231,8 +242,9 @@ Email:</textarea>
   <div class="rule"></div>
 
   <section class="notes">
-    <label>Notes</label>
-    <textarea id="notes" rows="2">Prices valid until the date above. Payment due within 7 days of delivery.</textarea>
+    <label>Notes (Terms & Conditions)</label>
+    <textarea id="notes" rows="3">Prices valid until the date above. Payment due within 7 days of delivery.</textarea>
+    <div id="notesPrint" class="notes-print"></div>
   </section>
 
   <footer class="prepared-by">
@@ -258,6 +270,7 @@ Email:</textarea>
 (function(){
   const KEY='quotegen_v5';
   const LOCAL_KEY='quotegen_saved_v1';
+  const LOGO_PERM_KEY='quotegen_logo_permanent';
   const itemsBody=document.getElementById('itemsBody');
   const fields=['brandName','brandDetails','billTo','quoteNo','quoteDate','validUntil','currency','discountPct','taxPct','notes','preparedBy'];
   let currentDocId=null, currentRevision=1, lastDocsById={};
@@ -282,6 +295,8 @@ Email:</textarea>
   function syncPrintDates(){
     document.getElementById('quoteDatePrint').textContent = fmtDate(document.getElementById('quoteDate').value);
     document.getElementById('validUntilPrint').textContent = fmtDate(document.getElementById('validUntil').value);
+    const nVal = document.getElementById('notes').value;
+    document.getElementById('notesPrint').textContent = nVal;
   }
 
   function addSizeRow(container, parentRow, sData){
@@ -428,7 +443,7 @@ Email:</textarea>
     const state={};
     fields.forEach(id=>{const el=document.getElementById(id); if(el) state[id]=el.value;});
     const img=document.getElementById('logoImg');
-    state.logo=(img.style.display==='block')?img.src:'';
+    state.logo=(img.style.display==='block')?img.src:(localStorage.getItem(LOGO_PERM_KEY)||'');
     state.items=[...itemsBody.querySelectorAll('.item-row')].map(r=>{
       const mRows=[...r.querySelectorAll('.measure-row')].map(m=>({
         h:m.querySelector('.u-h').value,
@@ -476,6 +491,9 @@ Email:</textarea>
     itemsBody.innerHTML='';
     createRow();
     currentDocId=null; currentRevision=1;
+    // Always preserve business logo
+    const permLogo = localStorage.getItem(LOGO_PERM_KEY);
+    if(permLogo) setLogo(permLogo);
     recalc(); save();
     switchTab('editor');
     window.scrollTo(0,0);
@@ -508,18 +526,30 @@ Email:</textarea>
   function applyState(state){
     fields.forEach(id=>{if(state[id]!=null){const el=document.getElementById(id); if(el) el.value=state[id];}});
     itemsBody.innerHTML='';
-    if(state.logo){ setLogo(state.logo); } else { clearLogo(); }
+    
+    // Logo restoration logic: never allow logo to be cleared unless user explicitly removes it
+    const permLogo = localStorage.getItem(LOGO_PERM_KEY);
+    if(state.logo){
+      setLogo(state.logo);
+    } else if(permLogo){
+      setLogo(permLogo);
+    } else {
+      clearLogo();
+    }
+
     (state.items&&state.items.length?state.items:[{}]).forEach(createRow);
     recalc();
   }
 
   function setLogo(src){
+    if(!src) return;
     const img=document.getElementById('logoImg');
     const wrap=document.getElementById('logoWrap');
     img.src=src; img.style.display='block';
     wrap.classList.add('has-logo');
     document.getElementById('logoLabel').style.display='none';
     document.getElementById('logoRemove').style.display='block';
+    try{ localStorage.setItem(LOGO_PERM_KEY, src); }catch(e){}
   }
 
   function clearLogo(){
@@ -529,19 +559,21 @@ Email:</textarea>
     wrap.classList.remove('has-logo');
     document.getElementById('logoLabel').style.display='block';
     document.getElementById('logoRemove').style.display='none';
+    try{ localStorage.removeItem(LOGO_PERM_KEY); }catch(e){}
   }
 
   function localRead(){try{const a=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]'); return Array.isArray(a)?a:[];}catch(e){return [];}}
   function localWrite(a){localStorage.setItem(LOCAL_KEY,JSON.stringify(a));}
 
   function saveQuote(){
+    const permLogo = localStorage.getItem(LOGO_PERM_KEY) || '';
     const docData=Object.assign({}, getState(), {
       id: currentDocId || ('doc-'+Date.now()),
       revision: currentRevision||1,
       grandTotalDisplay: document.getElementById('grandTotalOut').textContent,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      logo: permLogo // Logo is permanently kept
     });
-    delete docData.logo;
     const arr=localRead();
     const i=arr.findIndex(x=>String(x.id)===String(docData.id));
     if(i>=0){
@@ -647,6 +679,7 @@ Email:</textarea>
   });
   fields.forEach(id=>on(id,'input',()=>{recalc(); save();}));
   on('newQuoteBtn','click', newQuotation);
+  on('notes','input', syncPrintDates);
 
   on('logoInput','change',function(e){
     const file=e.target.files[0]; if(!file) return;
@@ -671,16 +704,18 @@ Email:</textarea>
   on('logoRemove','click',function(){ clearLogo(); save(); });
 
   const saved=load();
+  const permLogo = localStorage.getItem(LOGO_PERM_KEY);
   document.getElementById('quoteDate').value=(saved&&saved.quoteDate)||todayISO();
   document.getElementById('quoteNo').value=(saved&&saved.quoteNo)||defaultQuoteNo();
   if(saved){
     fields.forEach(id=>{if(saved[id]!=null){const el=document.getElementById(id); if(el&&id!=='quoteDate'&&id!=='quoteNo') el.value=saved[id];}});
-    if(saved.logo) setLogo(saved.logo);
+    if(saved.logo) { setLogo(saved.logo); } else if(permLogo) { setLogo(permLogo); }
     currentDocId=saved._docId||null;
     currentRevision=saved._rev||1;
     updateRevBadge();
     (saved.items&&saved.items.length?saved.items:[{}]).forEach(createRow);
   } else {
+    if(permLogo) setLogo(permLogo);
     createRow();
   }
   if(!document.getElementById('validUntil').value) document.getElementById('validUntil').value=addDaysISO(document.getElementById('quoteDate').value,15);
