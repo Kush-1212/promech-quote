@@ -96,16 +96,16 @@
   .measure-row[data-mu="in"] .mu-btn[data-mu="in"],
   .measure-row[data-mu="mm"] .mu-btn[data-mu="mm"]{background:var(--accent); border-color:var(--accent); color:#132038;}
   .amount-out{margin-top:2px; display:inline-block;}
-  .size-note{font-size:11px; color:var(--ink-soft); margin-top:4px; flex-basis:100%; white-space:pre-line; line-height:1.4;}
-  .item-row[data-measure="off"] .measure-block{display:none;}
-  .item-row[data-measure="off"] .size-note{display:none;}
+  .size-note{font-size:10px; color:var(--ink-soft); margin-top:4px; flex-basis:100%; white-space:pre-line;}
+  .item-row[data-measure="off"] .measure-fld{display:none;}
   .amount-fld{margin-left:auto;}
   .btn-add{margin-top:12px; background:none; border:1px dashed var(--rule); color:var(--ink-soft); border-radius:6px; padding:7px 12px; cursor:pointer; font-size:13px;}
   .btn-add:hover{border-color:var(--accent); color:var(--accent-deep);}
-  .btn-add-size{background:none; border:1px dashed var(--rule); color:var(--ink-soft); border-radius:4px; padding:4px 9px; cursor:pointer; font-size:11px; margin-top:4px;}
+  .btn-add-size{background:none; border:1px dashed var(--rule); color:var(--ink-soft); border-radius:4px; padding:3px 8px; cursor:pointer; font-size:11px; margin-top:4px;}
   .btn-add-size:hover{border-color:var(--accent); color:var(--accent-deep);}
-  .size-badge{font-size:11px; color:var(--ink-soft); background:var(--paper-edge); padding:2px 6px; border-radius:3px;}
-  .del-size-btn{background:none; border:none; color:#A8583F; cursor:pointer; font-size:15px; margin-top:14px; padding:0 4px;}
+  .del-size-btn{background:none; border:none; color:#A8583F; cursor:pointer; font-size:15px; line-height:1; padding:2px 4px; align-self:center; margin-top:12px;}
+  .measure-block{width:100%; display:flex; flex-direction:column; gap:6px; margin-bottom:4px;}
+  .measure-row{display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 10px;}
   .totals{display:flex; flex-direction:column; gap:8px; max-width:260px; margin-left:auto;}
   .totals-row{display:flex; justify-content:space-between; align-items:center; font-size:13px;}
   .totals-row input{width:70px; text-align:right;}
@@ -113,7 +113,6 @@
   .notes label{display:block; color:var(--ink-soft); font-size:12px; margin-bottom:4px;}
   .notes textarea{width:100%; border:none; background:none; resize:vertical; line-height:1.5; padding:2px 0; border-bottom:1px dashed var(--rule);}
   .notes textarea:focus{outline:none; border-bottom-color:var(--accent);}
-  .notes-print{display:none; white-space:pre-wrap; word-break:break-word; line-height:1.5; font-size:13px; color:var(--ink); padding:2px 0;}
   .prepared-by{margin-top:40px; display:flex; align-items:baseline; gap:8px; font-size:12px; color:var(--ink-soft);}
   .prepared-by input{max-width:220px;}
   .saved-panel{max-width:720px; margin:16px auto 40px; background:var(--paper); border:1px solid var(--paper-edge); border-radius:2px; padding:24px clamp(16px,4vw,32px);}
@@ -125,15 +124,6 @@
   .saved-actions button{background:none; border:1px solid var(--rule); color:var(--ink-soft); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer;}
   .saved-actions button:hover{border-color:var(--accent); color:var(--accent-deep);}
   .saved-actions .del-btn2{color:#A8583F;}
-
-  /* Modal Styling for Cloud Settings */
-  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px;}
-  .modal-card{background:var(--paper); border:1px solid var(--paper-edge); border-radius:6px; max-width:460px; width:100%; padding:22px; box-shadow:0 18px 40px rgba(0,0,0,0.45); color:var(--ink);}
-  .modal-card h3{margin:0 0 10px; font-family:var(--font-d); font-size:17px;}
-  .modal-card p{font-size:12px; color:var(--ink-soft); line-height:1.4; margin:0 0 14px;}
-  .modal-card input{width:100%; padding:8px; border:1px solid var(--rule); border-radius:4px; margin-bottom:14px; background:#fff;}
-  .modal-btns{display:flex; justify-content:flex-end; gap:8px;}
-
   @media (max-width:560px){
     .doc-meta{flex-direction:column;}
     .meta-left{flex:0 0 auto;}
@@ -142,7 +132,7 @@
     .fld input{width:56px;}
   }
 
-  /* PRINT / SAVE AS PDF STYLES - ZERO CUTOFF, FULL MULTI-PAGE PRINT */
+  /* PRINT / SAVE AS PDF STYLES - ZERO CRASH, NATIVE VECTOR */
   @media print{
     @page{size:A4; margin:14mm;}
     *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
@@ -157,14 +147,6 @@
     input, textarea, select{border:none !important; background:none !important;}
     input[type=date]{display:none !important;}
     .print-date{display:inline-block !important;}
-    #notes{display:none !important;}
-    #notesPrint{display:block !important;}
-    .notes{page-break-inside:auto !important;}
-    .item-row{page-break-inside:avoid !important;}
-    .totals{page-break-inside:avoid !important;}
-    .doc-meta{page-break-inside:avoid !important;}
-    .brand-row{page-break-inside:avoid !important;}
-    .prepared-by{page-break-inside:avoid !important;}
   }
 </style>
 </head>
@@ -178,7 +160,6 @@
       <option value="€">€ EUR</option>
       <option value="£">£ GBP</option>
     </select>
-    <button id="cloudBtn" class="btn-outline" title="Sync between PC & Mobile">☁️ Cloud</button>
     <button id="saveCloudBtn" class="btn-outline">💾 Save</button>
     <button id="exportBtn" class="btn-primary">Export PDF</button>
   </div>
@@ -188,7 +169,7 @@
   <button class="tab-btn" data-tab="saved">Saved Quotations</button>
   <button class="new-btn" id="newQuoteBtn" type="button" title="Start a new quotation">＋ New</button>
 </div>
-<p class="hint no-print" id="topHint">Save keeps a copy in this browser and syncs to cloud. Export PDF creates a clean, full document to send.</p>
+<p class="hint no-print" id="topHint">Save keeps a copy in this browser. Export PDF downloads a clean PDF file.</p>
 
 <div id="editorPanel">
 <main class="paper" id="paper">
@@ -233,7 +214,7 @@ Email:</textarea>
   <div class="rule"></div>
 
   <section class="items-section">
-    <p class="sub-hint no-print">Tap <strong>Measure</strong> to add multiple sizes (height × width × pcs) for same material — auto converts to sq.ft (rounded up to nearest 6&quot;). Leave off to enter Qty and Unit directly.</p>
+    <p class="sub-hint no-print">Tap <strong>Measure</strong>, choose in or mm, enter height × width and pcs — converts to sq.ft automatically (rounded up to the nearest 6&quot;). Leave it off to enter Qty and Unit directly (pcs, set, kg, mtr...).</p>
     <div id="itemsBody"></div>
     <button id="addItemBtn" class="btn-add no-print">+ Add item</button>
   </section>
@@ -250,11 +231,8 @@ Email:</textarea>
   <div class="rule"></div>
 
   <section class="notes">
-    <label>Notes (Terms & Conditions)</label>
-    <textarea id="notes" rows="4">1. Prices valid until the date above.
-2. Payment: 50% advance along with purchase order.
-3. Delivery within 7 to 10 working days from final approved measurements.</textarea>
-    <div id="notesPrint" class="notes-print"></div>
+    <label>Notes</label>
+    <textarea id="notes" rows="2">Prices valid until the date above. Payment due within 7 days of delivery.</textarea>
   </section>
 
   <footer class="prepared-by">
@@ -265,31 +243,9 @@ Email:</textarea>
 </div>
 
 <div id="savedPanel" class="saved-panel" style="display:none">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-    <h2 style="margin:0;">Saved Quotations</h2>
-    <div style="display:flex; gap:6px;">
-      <button id="pullCloudBtn" class="btn-outline" style="font-size:11px; padding:4px 8px; color:var(--ink-soft); border-color:var(--rule);">🔄 Cloud Sync</button>
-      <button id="exportBackupBtn" class="btn-outline" style="font-size:11px; padding:4px 8px; color:var(--ink-soft); border-color:var(--rule);">📥 Backup File</button>
-      <button id="importBackupBtn" class="btn-outline" style="font-size:11px; padding:4px 8px; color:var(--ink-soft); border-color:var(--rule);">📤 Restore File</button>
-      <input type="file" id="importFileInput" accept=".json" style="display:none;">
-    </div>
-  </div>
+  <h2>Saved Quotations</h2>
   <p id="savedNote" style="font-size:11px;color:var(--ink-soft);margin:0 0 10px;"></p>
   <div id="savedList"><p style="margin:0;color:var(--ink-soft);font-size:12px;">Loading…</p></div>
-</div>
-
-<!-- Cloud Sync Setup Modal -->
-<div id="cloudModal" class="modal-overlay" style="display:none;">
-  <div class="modal-card">
-    <h3>☁️ Cloud Sync (PC & Mobile)</h3>
-    <p>Enter a private <strong>Sync Code</strong> (e.g. <code>promech-quote</code> or your mobile number). Use the exact same code on your phone and PC to share all saved quotations seamlessly.</p>
-    <label style="font-size:11px; color:var(--ink-soft); font-weight:700;">YOUR SYNC CODE</label>
-    <input type="text" id="syncCodeInput" placeholder="Enter sync code (e.g. promech-2026)">
-    <div class="modal-btns">
-      <button type="button" id="closeCloudModal" class="btn-outline" style="color:var(--ink-soft); border-color:var(--rule);">Cancel</button>
-      <button type="button" id="saveCloudCodeBtn" class="btn-primary">Save & Connect</button>
-    </div>
-  </div>
 </div>
 
 <datalist id="unitList">
@@ -302,8 +258,6 @@ Email:</textarea>
 (function(){
   const KEY='quotegen_v5';
   const LOCAL_KEY='quotegen_saved_v1';
-  const CLOUD_SYNC_KEY='quotegen_sync_code';
-  const CLOUD_BLOB_KEY='quotegen_blob_id';
   const itemsBody=document.getElementById('itemsBody');
   const fields=['brandName','brandDetails','billTo','quoteNo','quoteDate','validUntil','currency','discountPct','taxPct','notes','preparedBy'];
   let currentDocId=null, currentRevision=1, lastDocsById={};
@@ -328,16 +282,44 @@ Email:</textarea>
   function syncPrintDates(){
     document.getElementById('quoteDatePrint').textContent = fmtDate(document.getElementById('quoteDate').value);
     document.getElementById('validUntilPrint').textContent = fmtDate(document.getElementById('validUntil').value);
-    const notesVal = document.getElementById('notes').value;
-    document.getElementById('notesPrint').textContent = notesVal;
-    autoGrowNotes();
   }
 
-  function autoGrowNotes(){
-    const el=document.getElementById('notes');
-    if(!el) return;
-    el.style.height='auto';
-    el.style.height=Math.max(el.scrollHeight, 60)+'px';
+  function addSizeRow(container, parentRow, sData){
+    sData = sData || {};
+    const mu = sData.mu === 'mm' ? 'mm' : 'in';
+    const sRow = document.createElement('div');
+    sRow.className = 'measure-row';
+    sRow.dataset.mu = mu;
+    sRow.innerHTML =
+      '<div class="fld"><label>Height</label><input type="number" class="u-h" min="0" step="any" value="'+esc(sData.h||'')+'"></div>'+
+      '<span class="x-sep">×</span>'+
+      '<div class="fld"><label>Width</label><input type="number" class="u-w" min="0" step="any" value="'+esc(sData.w||'')+'"></div>'+
+      '<div class="fld"><label>Unit</label><div class="unit-toggle">'+
+        '<button type="button" class="mu-btn" data-mu="in">in</button>'+
+        '<button type="button" class="mu-btn" data-mu="mm">mm</button>'+
+      '</div></div>'+
+      '<div class="fld"><label>Pcs</label><input type="number" class="u-pcs" min="0" step="1" value="'+(sData.pcs!=null?esc(sData.pcs):1)+'"></div>'+
+      '<button type="button" class="del-size-btn no-print" title="Delete size">×</button>';
+
+    sRow.querySelectorAll('.mu-btn').forEach(btn => btn.addEventListener('click', ()=>{
+      sRow.dataset.mu = btn.dataset.mu;
+      updateRowAmount(parentRow); recalc(); save();
+    }));
+    sRow.querySelectorAll('.u-h,.u-w,.u-pcs').forEach(inp => inp.addEventListener('input', ()=>{
+      updateRowAmount(parentRow); recalc(); save();
+    }));
+    sRow.querySelector('.del-size-btn').addEventListener('click', ()=>{
+      if(container.querySelectorAll('.measure-row').length > 1){
+        sRow.remove();
+      } else {
+        sRow.querySelector('.u-h').value = '';
+        sRow.querySelector('.u-w').value = '';
+        sRow.querySelector('.u-pcs').value = '1';
+      }
+      updateRowAmount(parentRow); recalc(); save();
+    });
+
+    container.appendChild(sRow);
   }
 
   function createRow(data){
@@ -346,17 +328,16 @@ Email:</textarea>
     const row=document.createElement('div');
     row.className='item-row';
     row.dataset.measure=measure;
-
     row.innerHTML=
       '<div class="row-top">'+
-        '<input class="item-name editable" placeholder="Item / stock name (e.g. 12mm Clear Glass, Profile Shutter)" value="'+esc(data.name||'')+'">'+
+        '<input class="item-name editable" placeholder="Item / stock name" value="'+esc(data.name||'')+'">'+
         '<button type="button" class="measure-btn no-print" title="Measure height × width">📐 Measure</button>'+
         '<button class="del-btn no-print" aria-label="Delete item" title="Delete item">×</button>'+
       '</div>'+
       '<div class="row-fields">'+
-        '<div class="measure-block measure-fld no-print" style="width:100%;">'+
+        '<div class="measure-block measure-fld no-print">'+
           '<div class="measure-list"></div>'+
-          '<button type="button" class="btn-add-size no-print">+ Add size</button>'+
+          '<div><button type="button" class="btn-add-size no-print">+ Add size</button></div>'+
         '</div>'+
         '<div class="fld"><label>Qty</label><input type="number" class="u-qty" min="0" step="any" value="'+(data.qty!=null?esc(data.qty):1)+'"></div>'+
         '<div class="fld"><label>Unit</label><input class="u-unit editable" list="unitList" placeholder="pcs" value="'+esc(data.unit||'')+'"></div>'+
@@ -366,13 +347,12 @@ Email:</textarea>
       '<div class="size-note measure-fld"></div>';
 
     const measureList = row.querySelector('.measure-list');
-    const measuresData = Array.isArray(data.measures) && data.measures.length ? data.measures :
-      [{ h: data.h||'', w: data.w||'', pcs: data.pcs!=null?data.pcs:1, mu: data.measureUnit||'in' }];
+    const measures = Array.isArray(data.measures) && data.measures.length ? data.measures :
+      [{ h: data.h || '', w: data.w || '', pcs: data.pcs != null ? data.pcs : 1, mu: data.measureUnit || 'in' }];
+    measures.forEach(m => addSizeRow(measureList, row, m));
 
-    measuresData.forEach(m => addMeasureRow(measureList, row, m));
-
-    row.querySelector('.btn-add-size').addEventListener('click', () => {
-      addMeasureRow(measureList, row, { h:'', w:'', pcs:1, mu:'in' });
+    row.querySelector('.btn-add-size').addEventListener('click', ()=>{
+      addSizeRow(measureList, row, { h: '', w: '', pcs: 1, mu: 'in' });
       updateRowAmount(row); recalc(); save();
     });
 
@@ -390,91 +370,35 @@ Email:</textarea>
     return row;
   }
 
-  function addMeasureRow(container, parentRow, mData){
-    mData=mData||{};
-    const mu=mData.mu==='mm'?'mm':'in';
-    const mRow=document.createElement('div');
-    mRow.className='measure-row';
-    mRow.dataset.mu=mu;
-    mRow.style.cssText='display:flex; align-items:flex-end; gap:8px; margin-bottom:8px; flex-wrap:wrap;';
-
-    mRow.innerHTML=
-      '<div class="fld"><label>Height</label><input type="number" class="u-h" min="0" step="any" value="'+esc(mData.h||'')+'"></div>'+
-      '<span class="x-sep">×</span>'+
-      '<div class="fld"><label>Width</label><input type="number" class="u-w" min="0" step="any" value="'+esc(mData.w||'')+'"></div>'+
-      '<div class="fld"><label>Unit</label><div class="unit-toggle">'+
-        '<button type="button" class="mu-btn" data-mu="in">in</button>'+
-        '<button type="button" class="mu-btn" data-mu="mm">mm</button>'+
-      '</div></div>'+
-      '<div class="fld"><label>Pcs</label><input type="number" class="u-pcs" min="0" step="1" value="'+(mData.pcs!=null?esc(mData.pcs):1)+'"></div>'+
-      '<div class="fld" style="align-self:center; margin-top:14px;"><span class="size-badge">0.00 sqft</span></div>'+
-      '<button type="button" class="del-size-btn no-print" title="Delete size">×</button>';
-
-    mRow.querySelectorAll('.mu-btn').forEach(btn=>btn.addEventListener('click',()=>{
-      mRow.dataset.mu=btn.dataset.mu;
-      updateRowAmount(parentRow); recalc(); save();
-    }));
-
-    mRow.querySelectorAll('.u-h,.u-w,.u-pcs').forEach(inp=>inp.addEventListener('input',()=>{
-      updateRowAmount(parentRow); recalc(); save();
-    }));
-
-    mRow.querySelector('.del-size-btn').addEventListener('click', ()=>{
-      if(container.querySelectorAll('.measure-row').length > 1){
-        mRow.remove();
-      } else {
-        mRow.querySelector('.u-h').value='';
-        mRow.querySelector('.u-w').value='';
-        mRow.querySelector('.u-pcs').value='1';
-      }
-      updateRowAmount(parentRow); recalc(); save();
-    });
-
-    container.appendChild(mRow);
-  }
-
   function updateRowAmount(row){
     const measure=row.dataset.measure==='on';
     const rate=parseFloat(row.querySelector('.u-rate').value)||0;
     const qtyInput=row.querySelector('.u-qty');
-    let qtyEff=0;
-
+    let qtyEff;
     if(measure){
       let totalSqft=0;
       const lines=[];
       const mRows=row.querySelectorAll('.measure-row');
-      
-      mRows.forEach((mEl, idx) => {
-        const hRaw=parseFloat(mEl.querySelector('.u-h').value)||0;
-        const wRaw=parseFloat(mEl.querySelector('.u-w').value)||0;
-        const pcs=parseFloat(mEl.querySelector('.u-pcs').value)||0;
-        const mu=mEl.dataset.mu||'in';
+      mRows.forEach((mr, idx)=>{
+        const hRaw=parseFloat(mr.querySelector('.u-h').value)||0;
+        const wRaw=parseFloat(mr.querySelector('.u-w').value)||0;
+        const pcs=parseFloat(mr.querySelector('.u-pcs').value)||0;
+        const mu=mr.dataset.mu||'in';
         const hIn=mu==='mm'?hRaw/25.4:hRaw;
         const wIn=mu==='mm'?wRaw/25.4:wRaw;
         const rh=roundUp6(hIn), rw=roundUp6(wIn);
         const perPiece=(rh/12)*(rw/12);
-        const entrySqft=perPiece*pcs;
-        totalSqft+=entrySqft;
-
-        const badge=mEl.querySelector('.size-badge');
-        if(badge) badge.textContent=entrySqft>0?(entrySqft.toFixed(2)+' sqft'):'0.00 sqft';
-
+        const itemSqft=perPiece*pcs;
+        totalSqft+=itemSqft;
         if(hRaw || wRaw){
-          const numPrefix=mRows.length>1?('#'+(idx+1)+': '):'';
-          lines.push(numPrefix+hRaw+' × '+wRaw+' '+mu+(pcs>1?(' ('+pcs+' pcs)'):'')+' = '+entrySqft.toFixed(2)+' sqft');
+          const prefix=mRows.length>1?('Size '+(idx+1)+': '):'';
+          lines.push(prefix+hRaw+'×'+wRaw+' '+mu+', '+(pcs||0)+' pcs');
         }
       });
-
       qtyInput.value=totalSqft?totalSqft.toFixed(2):'0.00';
       qtyInput.readOnly=true;
-      
       const note=row.querySelector('.size-note');
-      if(lines.length){
-        note.textContent = (mRows.length>1 ? 'Sizes:\n• ' : '') + lines.join('\n• ');
-      } else {
-        note.textContent = '';
-      }
-
+      note.textContent=lines.join('\n');
       const unitInput=row.querySelector('.u-unit');
       if(!unitInput.value.trim()) unitInput.value='sqft';
       qtyEff=totalSqft;
@@ -483,7 +407,6 @@ Email:</textarea>
       row.querySelector('.size-note').textContent='';
       qtyEff=parseFloat(qtyInput.value)||0;
     }
-
     const amount=qtyEff*rate;
     row.querySelector('.amount-out').textContent=fmt(amount);
     row.dataset.amount=amount;
@@ -518,6 +441,7 @@ Email:</textarea>
         name:r.querySelector('.item-name').value,
         measure:r.dataset.measure,
         measures:mRows,
+        measureUnit:first.mu||'in',
         h:first.h||'',
         w:first.w||'',
         pcs:first.pcs!=null?first.pcs:1,
@@ -589,54 +513,35 @@ Email:</textarea>
     recalc();
   }
 
-   function setLogo(src){
-    if(!src) return;
+  function setLogo(src){
     const img=document.getElementById('logoImg');
     const wrap=document.getElementById('logoWrap');
-    img.src=src; 
-    img.style.display='block';
+    img.src=src; img.style.display='block';
     wrap.classList.add('has-logo');
     document.getElementById('logoLabel').style.display='none';
     document.getElementById('logoRemove').style.display='block';
-    try { localStorage.setItem(LOGO_KEY, src); } catch(e){}
   }
 
   function clearLogo(){
     const img=document.getElementById('logoImg');
     const wrap=document.getElementById('logoWrap');
-    img.removeAttribute('src'); 
-    img.style.display='none';
+    img.removeAttribute('src'); img.style.display='none';
     wrap.classList.remove('has-logo');
     document.getElementById('logoLabel').style.display='block';
     document.getElementById('logoRemove').style.display='none';
-    try { localStorage.removeItem(LOGO_KEY); } catch(e){}
   }
 
-  function applyState(state){
-    fields.forEach(id=>{if(state[id]!=null){const el=document.getElementById(id); if(el) el.value=state[id];}});
-    itemsBody.innerHTML='';
-    
-    // Always preserve your permanent logo
-    const permanentLogo = localStorage.getItem(LOGO_KEY);
-    if(state.logo || permanentLogo){ 
-      setLogo(state.logo || permanentLogo); 
-    } else { 
-      clearLogo(); 
-    }
-    
-    (state.items&&state.items.length?state.items:[{}]).forEach(createRow);
-    recalc();
-  }
+  function localRead(){try{const a=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]'); return Array.isArray(a)?a:[];}catch(e){return [];}}
+  function localWrite(a){localStorage.setItem(LOCAL_KEY,JSON.stringify(a));}
 
   function saveQuote(){
-    const permanentLogo = localStorage.getItem(LOGO_KEY) || '';
     const docData=Object.assign({}, getState(), {
       id: currentDocId || ('doc-'+Date.now()),
       revision: currentRevision||1,
       grandTotalDisplay: document.getElementById('grandTotalOut').textContent,
-      updatedAt: Date.now(),
-      logo: permanentLogo // Keep logo safely attached
+      updatedAt: Date.now()
     });
+    delete docData.logo;
     const arr=localRead();
     const i=arr.findIndex(x=>String(x.id)===String(docData.id));
     if(i>=0){
@@ -650,27 +555,112 @@ Email:</textarea>
     save();
   }
 
+  function renderSavedList(){
+    const listEl=document.getElementById('savedList');
+    const items=localRead().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    if(!items.length){ listEl.innerHTML='<p style="margin:0;color:var(--ink-soft);font-size:12px;">No saved quotations yet. Use Save in the editor.</p>'; return; }
+    lastDocsById={};
+    listEl.innerHTML='';
+    items.forEach(data=>{
+      const id=String(data.id);
+      lastDocsById[id]=data;
+      const row=document.createElement('div');
+      row.className='saved-row';
+      row.innerHTML=
+        '<div class="saved-main">'+
+          '<strong>'+esc(data.quoteNo||'')+((data.revision||1)>1?' · Rev '+data.revision:'')+'</strong>'+
+          '<span>'+esc(data.billTo||'(no client)')+'</span>'+
+          '<span>'+esc(data.quoteDate||'')+'</span>'+
+          '<span>'+esc(data.grandTotalDisplay||'')+'</span>'+
+        '</div>'+
+        '<div class="saved-actions">'+
+          '<button type="button" class="open-btn" data-id="'+esc(id)+'">Open</button>'+
+          '<button type="button" class="rev-btn" data-id="'+esc(id)+'">New revision</button>'+
+          '<button type="button" class="del-btn2" data-id="'+esc(id)+'">Delete</button>'+
+        '</div>';
+      listEl.appendChild(row);
+    });
+    listEl.querySelectorAll('.open-btn').forEach(b=>b.addEventListener('click',()=>openSaved(b.dataset.id,false)));
+    listEl.querySelectorAll('.rev-btn').forEach(b=>b.addEventListener('click',()=>openSaved(b.dataset.id,true)));
+    listEl.querySelectorAll('.del-btn2').forEach(b=>b.addEventListener('click',()=>deleteSaved(b.dataset.id)));
+  }
+
+  function openSaved(id, asNewRevision){
+    const data=lastDocsById[String(id)];
+    if(!data) return;
+    applyState(data);
+    if(asNewRevision){
+      currentDocId=null;
+      currentRevision=(data.revision||1)+1;
+    } else {
+      currentDocId=String(id);
+      currentRevision=data.revision||1;
+    }
+    save();
+    switchTab('editor');
+  }
+
+  function deleteSaved(id){
+    if(!confirm('Delete this saved quotation? This cannot be undone.')) return;
+    const currentList=localRead();
+    const updatedList=currentList.filter(x=>String(x.id)!==String(id));
+    localWrite(updatedList);
+    renderSavedList();
+    if(String(currentDocId)===String(id)){
+      currentDocId=null;
+      save();
+    }
+  }
+
+  function switchTab(name){
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+    document.getElementById('editorPanel').style.display=name==='editor'?'':'none';
+    document.getElementById('savedPanel').style.display=name==='saved'?'':'none';
+    if(name==='saved'){
+      document.getElementById('savedNote').textContent='Saved on this device and browser.';
+      renderSavedList();
+    }
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+
+  document.getElementById('saveCloudBtn').addEventListener('click',()=>{
+    const btn=document.getElementById('saveCloudBtn');
+    const old=btn.textContent;
+    btn.textContent='Saved ✓';
+    saveQuote();
+    setTimeout(()=>{btn.textContent=old;},1500);
+  });
+
+  // EXPORT PDF: Uses native vector browser print engine
+  // Never crashes, zero RAM usage, instant, and preserves exact layout & fonts.
+  document.getElementById('exportBtn').addEventListener('click',()=>{
+    switchTab('editor');
+    syncPrintDates();
+    window.print();
+  });
+
+  function on(id,evt,fn){ const el=document.getElementById(id); if(el) el.addEventListener(evt,fn); }
+
+  on('addItemBtn','click',()=>{
+    const row=createRow(); save(); row.querySelector('.item-name').focus();
+  });
+  fields.forEach(id=>on(id,'input',()=>{recalc(); save();}));
+  on('newQuoteBtn','click', newQuotation);
+
   on('logoInput','change',function(e){
     const file=e.target.files[0]; if(!file) return;
     const reader=new FileReader();
-    reader.onerror=()=>alert('Could not read image file.');
+    reader.onerror=()=>alert('Could not read file.');
     reader.onload=function(ev){
       const src=new Image();
       src.onload=function(){
-        // Mobile camera compression: resize cleanly to avoid memory overflow
-        const maxDim = 400;
-        const scale = Math.min(1, maxDim / Math.max(src.naturalWidth || 300, src.naturalHeight || 300));
-        const w = Math.max(1, Math.round((src.naturalWidth || 300) * scale));
-        const h = Math.max(1, Math.round((src.naturalHeight || 300) * scale));
-        
-        const c=document.createElement('canvas'); 
-        c.width=w; 
-        c.height=h;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(src, 0, 0, w, h);
-        
-        const compressedData = c.toDataURL('image/png');
-        setLogo(compressedData);
+        const nw=src.naturalWidth||300, nh=src.naturalHeight||300;
+        const scale=Math.min(1, 400/Math.max(nw,nh));
+        const w=Math.max(1,Math.round(nw*scale)), h=Math.max(1,Math.round(nh*scale));
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(src,0,0,w,h);
+        setLogo(c.toDataURL('image/png'));
         save();
       };
       src.src=ev.target.result;
@@ -678,12 +668,7 @@ Email:</textarea>
     reader.readAsDataURL(file);
     e.target.value='';
   });
-
-  on('logoRemove','click',function(){ 
-    clearLogo(); 
-    save(); 
-  });
-
+  on('logoRemove','click',function(){ clearLogo(); save(); });
 
   const saved=load();
   document.getElementById('quoteDate').value=(saved&&saved.quoteDate)||todayISO();
