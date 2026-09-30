@@ -589,89 +589,54 @@ Email:</textarea>
     recalc();
   }
 
-  function setLogo(src){
+   function setLogo(src){
+    if(!src) return;
     const img=document.getElementById('logoImg');
     const wrap=document.getElementById('logoWrap');
-    img.src=src; img.style.display='block';
+    img.src=src; 
+    img.style.display='block';
     wrap.classList.add('has-logo');
     document.getElementById('logoLabel').style.display='none';
     document.getElementById('logoRemove').style.display='block';
+    try { localStorage.setItem(LOGO_KEY, src); } catch(e){}
   }
 
   function clearLogo(){
     const img=document.getElementById('logoImg');
     const wrap=document.getElementById('logoWrap');
-    img.removeAttribute('src'); img.style.display='none';
+    img.removeAttribute('src'); 
+    img.style.display='none';
     wrap.classList.remove('has-logo');
     document.getElementById('logoLabel').style.display='block';
     document.getElementById('logoRemove').style.display='none';
+    try { localStorage.removeItem(LOGO_KEY); } catch(e){}
   }
 
-  function localRead(){try{const a=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]'); return Array.isArray(a)?a:[];}catch(e){return [];}}
-  function localWrite(a){localStorage.setItem(LOCAL_KEY,JSON.stringify(a));}
-
-  // --- CLOUD SYNC ENGINE (PC + MOBILE) ---
-  async function syncPushToCloud(list){
-    const syncCode = (localStorage.getItem(CLOUD_SYNC_KEY)||'').trim();
-    if(!syncCode) return;
-    try{
-      let blobId = localStorage.getItem(CLOUD_BLOB_KEY);
-      if(!blobId){
-        const res = await fetch('https://jsonblob.com/api/jsonBlob', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-          body: JSON.stringify({ code: syncCode, list: list, updatedAt: Date.now() })
-        });
-        const loc = res.headers.get('Location')||'';
-        const parts = loc.split('/');
-        blobId = parts[parts.length-1];
-        if(blobId) localStorage.setItem(CLOUD_BLOB_KEY, blobId);
-      } else {
-        await fetch('https://jsonblob.com/api/jsonBlob/' + blobId, {
-          method: 'PUT',
-          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-          body: JSON.stringify({ code: syncCode, list: list, updatedAt: Date.now() })
-        });
-      }
-    }catch(err){ console.warn('Cloud auto-sync background info:', err); }
-  }
-
-  async function syncPullFromCloud(){
-    const syncCode = (localStorage.getItem(CLOUD_SYNC_KEY)||'').trim();
-    const blobId = (localStorage.getItem(CLOUD_BLOB_KEY)||'').trim();
-    if(!blobId){ alert('Please enter and connect your Sync Code first via ☁️ Cloud button.'); return; }
-    try{
-      const res = await fetch('https://jsonblob.com/api/jsonBlob/' + blobId, { headers: {'Accept': 'application/json'} });
-      if(!res.ok) throw new Error('Cloud storage record not found.');
-      const data = await res.json();
-      if(data && Array.isArray(data.list)){
-        const local = localRead();
-        const mergedMap = {};
-        local.forEach(item => mergedMap[String(item.id)] = item);
-        data.list.forEach(remoteItem => {
-          const id = String(remoteItem.id);
-          if(!mergedMap[id] || (remoteItem.updatedAt||0) > (mergedMap[id].updatedAt||0)){
-            mergedMap[id] = remoteItem;
-          }
-        });
-        const finalArr = Object.values(mergedMap).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-        localWrite(finalArr);
-        renderSavedList();
-        alert('Cloud sync complete! ' + finalArr.length + ' quotations loaded.');
-      }
-    }catch(e){
-      alert('Cloud Sync note: ' + (e&&e.message?e.message:e));
+  function applyState(state){
+    fields.forEach(id=>{if(state[id]!=null){const el=document.getElementById(id); if(el) el.value=state[id];}});
+    itemsBody.innerHTML='';
+    
+    // Always preserve your permanent logo
+    const permanentLogo = localStorage.getItem(LOGO_KEY);
+    if(state.logo || permanentLogo){ 
+      setLogo(state.logo || permanentLogo); 
+    } else { 
+      clearLogo(); 
     }
+    
+    (state.items&&state.items.length?state.items:[{}]).forEach(createRow);
+    recalc();
   }
 
   function saveQuote(){
+    const permanentLogo = localStorage.getItem(LOGO_KEY) || '';
     const docData=Object.assign({}, getState(), {
       id: currentDocId || ('doc-'+Date.now()),
       revision: currentRevision||1,
       grandTotalDisplay: document.getElementById('grandTotalOut').textContent,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      logo: permanentLogo // Keep logo safely attached
     });
-    delete docData.logo;
     const arr=localRead();
     const i=arr.findIndex(x=>String(x.id)===String(docData.id));
     if(i>=0){
@@ -683,178 +648,29 @@ Email:</textarea>
     localWrite(arr);
     renderSavedList();
     save();
-    syncPushToCloud(arr);
   }
-
-  function renderSavedList(){
-    const listEl=document.getElementById('savedList');
-    const items=localRead().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-    if(!items.length){ listEl.innerHTML='<p style="margin:0;color:var(--ink-soft);font-size:12px;">No saved quotations yet. Use Save in the editor.</p>'; return; }
-    lastDocsById={};
-    listEl.innerHTML='';
-    items.forEach(data=>{
-      const id=String(data.id);
-      lastDocsById[id]=data;
-      const row=document.createElement('div');
-      row.className='saved-row';
-      row.innerHTML=
-        '<div class="saved-main">'+
-          '<strong>'+esc(data.quoteNo||'')+((data.revision||1)>1?' · Rev '+data.revision:'')+'</strong>'+
-          '<span>'+esc(data.billTo||'(no client)')+'</span>'+
-          '<span>'+esc(data.quoteDate||'')+'</span>'+
-          '<span>'+esc(data.grandTotalDisplay||'')+'</span>'+
-        '</div>'+
-        '<div class="saved-actions">'+
-          '<button type="button" class="open-btn" data-id="'+esc(id)+'">Open</button>'+
-          '<button type="button" class="rev-btn" data-id="'+esc(id)+'">New revision</button>'+
-          '<button type="button" class="del-btn2" data-id="'+esc(id)+'">Delete</button>'+
-        '</div>';
-      listEl.appendChild(row);
-    });
-    listEl.querySelectorAll('.open-btn').forEach(b=>b.addEventListener('click',()=>openSaved(b.dataset.id,false)));
-    listEl.querySelectorAll('.rev-btn').forEach(b=>b.addEventListener('click',()=>openSaved(b.dataset.id,true)));
-    listEl.querySelectorAll('.del-btn2').forEach(b=>b.addEventListener('click',()=>deleteSaved(b.dataset.id)));
-  }
-
-  function openSaved(id, asNewRevision){
-    const data=lastDocsById[String(id)];
-    if(!data) return;
-    applyState(data);
-    if(asNewRevision){
-      currentDocId=null;
-      currentRevision=(data.revision||1)+1;
-    } else {
-      currentDocId=String(id);
-      currentRevision=data.revision||1;
-    }
-    save();
-    switchTab('editor');
-  }
-
-  function deleteSaved(id){
-    if(!confirm('Delete this saved quotation? This cannot be undone.')) return;
-    const currentList=localRead();
-    const updatedList=currentList.filter(x=>String(x.id)!==String(id));
-    localWrite(updatedList);
-    renderSavedList();
-    syncPushToCloud(updatedList);
-    if(String(currentDocId)===String(id)){
-      currentDocId=null;
-      save();
-    }
-  }
-
-  function switchTab(name){
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
-    document.getElementById('editorPanel').style.display=name==='editor'?'':'none';
-    document.getElementById('savedPanel').style.display=name==='saved'?'':'none';
-    if(name==='saved'){
-      const syncCode = localStorage.getItem(CLOUD_SYNC_KEY);
-      document.getElementById('savedNote').textContent=syncCode
-        ? ('☁️ Cloud sync active with code: ' + syncCode)
-        : 'Saved locally. Click "☁️ Cloud" in top bar to sync across PC & Mobile.';
-      renderSavedList();
-    }
-  }
-
-  document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
-
-  document.getElementById('saveCloudBtn').addEventListener('click',()=>{
-    const btn=document.getElementById('saveCloudBtn');
-    const old=btn.textContent;
-    btn.textContent='Saved ✓';
-    saveQuote();
-    setTimeout(()=>{btn.textContent=old;},1500);
-  });
-
-  // Cloud Modal Listeners
-  document.getElementById('cloudBtn').addEventListener('click', ()=>{
-    document.getElementById('syncCodeInput').value = localStorage.getItem(CLOUD_SYNC_KEY)||'';
-    document.getElementById('cloudModal').style.display='flex';
-  });
-  document.getElementById('closeCloudModal').addEventListener('click', ()=>{
-    document.getElementById('cloudModal').style.display='none';
-  });
-  document.getElementById('saveCloudCodeBtn').addEventListener('click', async ()=>{
-    const val = document.getElementById('syncCodeInput').value.trim();
-    if(!val){
-      localStorage.removeItem(CLOUD_SYNC_KEY);
-      localStorage.removeItem(CLOUD_BLOB_KEY);
-      alert('Cloud Sync disabled. Saving locally only.');
-    } else {
-      localStorage.setItem(CLOUD_SYNC_KEY, val);
-      await syncPushToCloud(localRead());
-      alert('Connected to cloud with code: ' + val + '\nUse this exact same code on your other phone/PC!');
-    }
-    document.getElementById('cloudModal').style.display='none';
-  });
-
-  // 1-Click File Backup & Restore
-  document.getElementById('exportBackupBtn').addEventListener('click', ()=>{
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(localRead(), null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute('href', dataStr);
-    dlAnchor.setAttribute('download', 'Promech-Quotes-Backup.json');
-    document.body.appendChild(dlAnchor);
-    dlAnchor.click();
-    dlAnchor.remove();
-  });
-  document.getElementById('importBackupBtn').addEventListener('click', ()=>{
-    document.getElementById('importFileInput').click();
-  });
-  document.getElementById('importFileInput').addEventListener('change', (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt)=>{
-      try{
-        const imported = JSON.parse(evt.target.result);
-        if(Array.isArray(imported)){
-          localWrite(imported);
-          renderSavedList();
-          syncPushToCloud(imported);
-          alert('Successfully restored ' + imported.length + ' quotations!');
-        } else {
-          alert('Invalid backup file format.');
-        }
-      }catch(err){ alert('Error reading file: '+err.message); }
-    };
-    reader.readAsText(file);
-    e.target.value='';
-  });
-
-  document.getElementById('pullCloudBtn').addEventListener('click', syncPullFromCloud);
-
-  // EXPORT PDF: Native vector browser print engine
-  // Never crashes, zero RAM usage, instant, and preserves exact layout & fonts.
-  document.getElementById('exportBtn').addEventListener('click',()=>{
-    switchTab('editor');
-    syncPrintDates();
-    window.print();
-  });
-
-  function on(id,evt,fn){ const el=document.getElementById(id); if(el) el.addEventListener(evt,fn); }
-
-  on('addItemBtn','click',()=>{
-    const row=createRow(); save(); row.querySelector('.item-name').focus();
-  });
-  fields.forEach(id=>on(id,'input',()=>{recalc(); save();}));
-  on('newQuoteBtn','click', newQuotation);
-  on('notes','input', syncPrintDates);
 
   on('logoInput','change',function(e){
     const file=e.target.files[0]; if(!file) return;
     const reader=new FileReader();
-    reader.onerror=()=>alert('Could not read file.');
+    reader.onerror=()=>alert('Could not read image file.');
     reader.onload=function(ev){
       const src=new Image();
       src.onload=function(){
-        const nw=src.naturalWidth||300, nh=src.naturalHeight||300;
-        const scale=Math.min(1, 400/Math.max(nw,nh));
-        const w=Math.max(1,Math.round(nw*scale)), h=Math.max(1,Math.round(nh*scale));
-        const c=document.createElement('canvas'); c.width=w; c.height=h;
-        c.getContext('2d').drawImage(src,0,0,w,h);
-        setLogo(c.toDataURL('image/png'));
+        // Mobile camera compression: resize cleanly to avoid memory overflow
+        const maxDim = 400;
+        const scale = Math.min(1, maxDim / Math.max(src.naturalWidth || 300, src.naturalHeight || 300));
+        const w = Math.max(1, Math.round((src.naturalWidth || 300) * scale));
+        const h = Math.max(1, Math.round((src.naturalHeight || 300) * scale));
+        
+        const c=document.createElement('canvas'); 
+        c.width=w; 
+        c.height=h;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(src, 0, 0, w, h);
+        
+        const compressedData = c.toDataURL('image/png');
+        setLogo(compressedData);
         save();
       };
       src.src=ev.target.result;
@@ -862,7 +678,12 @@ Email:</textarea>
     reader.readAsDataURL(file);
     e.target.value='';
   });
-  on('logoRemove','click',function(){ clearLogo(); save(); });
+
+  on('logoRemove','click',function(){ 
+    clearLogo(); 
+    save(); 
+  });
+
 
   const saved=load();
   document.getElementById('quoteDate').value=(saved&&saved.quoteDate)||todayISO();
